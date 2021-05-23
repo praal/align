@@ -52,6 +52,19 @@ class Empathic(Policy):
                 best_actions.append(action)
         return self.rng.choice(best_actions)
 
+    def get_policy(self):
+        ans = {}
+        for state,_ in self.Q:
+            max_q = self.Q.get((state, 0), self.default_q)
+            max_action = 0
+            for action in range(1, self.num_actions):
+                q = self.Q.get((state, action), self.default_q)
+                if q > max_q:
+                    max_q = q
+                    max_action = action
+            ans[state] = max_action
+        return ans
+
     def get_train_action(self, state: State,
                          restrict: Optional[List[int]] = None) -> ActionId:
         if self.rng.random() < self.epsilon:
@@ -61,24 +74,42 @@ class Empathic(Policy):
         else:
             return self.get_best_action(state, restrict)
 
-    def estimate_other(self, state):
-        _, _, facts = state.uid
-        if facts[1]:
+    def estimate_other(self, state, init_x=1, init_y=1):
+       # print(state, state.iron_x,state.iron_y)
+        if state.iron_x == -1:
             return self.penalty
+       # print(state.iron_x,state.iron_y)
+        return -1.0 * (state.iron_x - 1 + state.iron_y - 1)
+        uid = (init_x, init_y, state.iron_x, state.iron_y, tuple([False, False]))
 
-        max_q = self.others_q.get((state.uid, 0), self.default_q)
+        max_q = self.others_q.get((uid, 0), self.default_q)
         for action in range(1, self.num_actions):
-            q = self.Q.get((state.uid, action), self.default_q)
+            q = self.Q.get((uid, action), self.default_q)
             if q > max_q:
                 max_q = q
+        #print(max_q, uid)
+        if max_q[0] == 0:
+            print(uid)
         return max_q[0]
+
+        #print(max_q, uid)
+
+        uid2 = (init_x, init_y, 2, 1, tuple([False, False]))
+        max_q2 = self.others_q.get((uid2, 0), self.default_q)
+        for action in range(1, self.num_actions):
+            q = self.Q.get((uid, action), self.default_q)
+            if q > max_q2:
+                max_q2 = q
+        #print(max_q, max_q2, state.iron_x, state.iron_y)
+        return max_q[0] - max_q2[0]
 
     def update(self, s0: State, a: ActionId, s1: State, r: float, end: bool):
         q = (1.0 - self.alpha) * self.Q.get((s0.uid, a), self.default_q)[0]
         if end:
-            q += self.alpha * r
+           # print("hereeee")
+            q += self.alpha * (r + self.others_alpha * self.estimate_other(s1))
         else:
-            q += self.alpha * (r + self.gamma * (self.estimate(s1) + self.others_alpha * self.estimate_other(s1)))
+            q += self.alpha * (r + self.gamma * (self.estimate(s1)))
 
         self.Q[(s0.uid, a)] = q, True
 
