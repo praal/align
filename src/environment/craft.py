@@ -14,7 +14,7 @@ ACTIONS: List[Tuple[int, int]] = [
 IRON_IND = 0
 
 OBJECTS = dict([(v, k) for k, v in enumerate(
-    ["iron", "wood", "gold", "axe", "gem", "ring"])])  # , "wall"])])
+    ["iron", "wood", "axe"])])  # , "wall"])]) # , "wall"])])
 #    ["iron", "wood", "axe", "factory", "gem", "gold", "ring", "bridge"])])  # , "wall"])])
 
 
@@ -34,22 +34,16 @@ def update_facts(facts: Sequence[bool], objects: Observation, is_iron):
                 iron_change = -1
         elif o != "gold" and o != "gem" and o in OBJECTS:
              state.add(OBJECTS[o])
-        elif o == "gem" and OBJECTS["axe"] in state:
-             state.add(OBJECTS[o])
+      #  elif o == "gem" and OBJECTS["axe"] in state:
+      #       state.add(OBJECTS[o])
 
-        elif o == "gold" and OBJECTS["axe"] in state:
-            state.add(OBJECTS[o])
 
 
     if "factory" in objects:
         if OBJECTS["iron"] in state and OBJECTS["wood"] in state:
-
             if OBJECTS["axe"] not in state:
                 state.add(OBJECTS["axe"])
 
-
-        if OBJECTS["gold"] in state and OBJECTS["gem"] in state:
-            state.add(OBJECTS["ring"])
 
 
     return state, iron_change
@@ -60,10 +54,11 @@ class CraftState(State):
     map_data: Tuple[Tuple[Observation, ...], ...]
 
 
-    def __init__(self, x: int, y: int, iron_x, iron_y,  facts: Set[int]):
+    def __init__(self, x: int, y: int, iron_x, iron_y,  facts: Set[int], default_x, default_y):
         self.x = x
         self.y = y
-
+        self.default_x = default_x
+        self.default_y = default_y
         fact_list = [False] * len(OBJECTS)
         for fact in facts:
             fact_list[fact] = True
@@ -78,19 +73,18 @@ class CraftState(State):
 
     @staticmethod
     def random(rng: Random,
-               map_data: Sequence[Sequence[Observation]], iron_locations: List[List[int]]) -> 'CraftState':
-        # return CraftState(5, 5, set())
+               map_data: Sequence[Sequence[Observation]], iron_locations: List[List[int]], default_x, default_y) -> 'CraftState':
+
         while True:
-            #y = rng.randrange(len(map_data))
-            #x = rng.randrange(len(map_data[0]))
-            x = 1
-            y = 1
+
+            x = default_x
+            y = default_y
             ind = rng.randrange(len(iron_locations))
             iron_y = iron_locations[ind][0]
             iron_x = iron_locations[ind][1]
             if "wall" not in map_data[y][x] and "wall" not in map_data[iron_y][iron_x]:
                 facts, _ = update_facts((), map_data[y][x], 0)
-                return CraftState(x, y, iron_x, iron_y, facts)
+                return CraftState(x, y, iron_x, iron_y, facts, default_x, default_y)
 
 
 MAPPING: Mapping[str, FrozenSet[str]] = {
@@ -127,13 +121,16 @@ class Craft(Environment[CraftState]):
     map_data = [[]]
     num_actions = 4
 
-    def __init__(self, map_fn: str, rng: Random):
+    def __init__(self, map_fn: str, rng: Random, default_x, default_y, noise = 0.001):
         self.map_data = load_map(map_fn)
         self.height = len(self.map_data)
         self.width = len(self.map_data[0])
         self.rng = rng
         self.iron_locations = self.get_all_item()
-        super().__init__(CraftState.random(self.rng, self.map_data, self.iron_locations))
+        self.default_x = default_x
+        self.default_y = default_y
+        self.noise = noise
+        super().__init__(CraftState.random(self.rng, self.map_data, self.iron_locations, default_x, default_y))
 
 
     def get_all_item(self, item="iron"):
@@ -144,17 +141,11 @@ class Craft(Environment[CraftState]):
                     ans.append([y, x])
         return ans
 
-    def delete_iron(self):
-        x = self.state.iron_x
-        y = self.state.iron_y
-        self.map_data[y][x] = frozenset()
-
-    def add_iron(self):
-        x = self.state.iron_x
-        y = self.state.iron_y
-        self.map_data[y][x] = frozenset(["iron"])
-
     def apply_action(self, a: ActionId):
+
+        if self.rng.random() < self.noise:
+            a = self.rng.randrange(self.num_actions)
+
         x, y = self.state.x + ACTIONS[a][0], self.state.y + ACTIONS[a][1]
         logging.debug("applying action %s:%s", a, ACTIONS[a])
         if x < 0 or y < 0 or x >= self.width or y >= self.height or \
@@ -172,22 +163,19 @@ class Craft(Environment[CraftState]):
         new_iron_y = self.state.iron_y
 
         if iron_change == 1:
-          #  print("here", iron_change, self.state)
+
             new_iron_x = x
             new_iron_y = y
-        #    print("########", self.map_data[y][x])
+
 
         elif iron_change == -1:
 
-         #   print("here", self.state, self.map_data[y][x])
             new_iron_x = -1
             new_iron_y = -1
-         #   self.map_data[y][x] = frozenset()
-         #   print("####", self.map_data[y][x])
 
-        self.state = CraftState(x, y, new_iron_x, new_iron_y, new_facts)
-      #  if iron_change == 1:
-        #    print("ttttthere", iron_change, self.state)
+
+        self.state = CraftState(x, y, new_iron_x, new_iron_y, new_facts, self.default_x, self.default_y)
+
         logging.debug("success, current state is %s", self.state)
 
     def cost(self, s0: CraftState, a: ActionId, s1: CraftState) -> float:
@@ -200,7 +188,7 @@ class Craft(Environment[CraftState]):
         if state is not None:
             self.state = state
         else:
-            self.state = CraftState.random(self.rng, self.map_data, self.iron_locations)
+            self.state = CraftState.random(self.rng, self.map_data, self.iron_locations, self.default_x, self.default_y)
     @staticmethod
     def label(state: CraftState) -> FrozenSet[int]:
         return frozenset([i for i in range(len(OBJECTS)) if state.facts[i]])

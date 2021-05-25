@@ -75,39 +75,28 @@ class Empathic(Policy):
             return self.get_best_action(state, restrict)
 
     def estimate_other(self, state, init_x=1, init_y=1):
-       # print(state, state.iron_x,state.iron_y)
         if state.iron_x == -1:
             return self.penalty
-       # print(state.iron_x,state.iron_y)
-        return -1.0 * (state.iron_x - 1 + state.iron_y - 1)
-        uid = (init_x, init_y, state.iron_x, state.iron_y, tuple([False, False]))
+        uid = (init_x, init_y, state.iron_x, state.iron_y, tuple([False, False, False]))
 
         max_q = self.others_q.get((uid, 0), self.default_q)
         for action in range(1, self.num_actions):
-            q = self.Q.get((uid, action), self.default_q)
+            q = self.others_q.get((uid, action), self.default_q)
             if q > max_q:
                 max_q = q
-        #print(max_q, uid)
         if max_q[0] == 0:
             print(uid)
         return max_q[0]
 
-        #print(max_q, uid)
 
-        uid2 = (init_x, init_y, 2, 1, tuple([False, False]))
-        max_q2 = self.others_q.get((uid2, 0), self.default_q)
-        for action in range(1, self.num_actions):
-            q = self.Q.get((uid, action), self.default_q)
-            if q > max_q2:
-                max_q2 = q
-        #print(max_q, max_q2, state.iron_x, state.iron_y)
-        return max_q[0] - max_q2[0]
 
-    def update(self, s0: State, a: ActionId, s1: State, r: float, end: bool):
+    def update(self, s0: State, a: ActionId, s1: State, r: float, end: bool, p = [1], init_x = [[1, 1]]):
         q = (1.0 - self.alpha) * self.Q.get((s0.uid, a), self.default_q)[0]
         if end:
-           # print("hereeee")
-            q += self.alpha * (r + self.others_alpha * self.estimate_other(s1))
+            others = 0
+            for i in range(len(p)):
+                others += p[i] * self.estimate_other(s1, init_x[i][0], init_x[i][1])
+            q += self.alpha * (r + self.others_alpha * others)
         else:
             q += self.alpha * (r + self.gamma * (self.estimate(s1)))
 
