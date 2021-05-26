@@ -21,14 +21,15 @@ from environment import Craft, CraftState
 from environment import ReachFacts
 from utils.report import SequenceReport
 from rl.empathic_policy import Empathic
-from environment.craft import OBJECTS
+from environment.craft import OBJECTS, update_facts
 
 DEFAULT_Q = -1000.0
 
-TOTAL_STEPS1 = 800000
-TOTAL_STEPS2 = 3000000
+TOTAL_STEPS1 = 1000000
+TOTAL_STEPS2 = 2000000
 
 EPISODE_LENGTH = 1000
+TEST_EPISODE_LENGTH = 50
 LOG_STEP = 10000
 TRIALS = 5
 START_TASK = 0
@@ -50,7 +51,7 @@ def evaluate_agents(env, policy1, reward1, env2, policy2, reward2, init, init2):
             trial_reward: float = 0.0
             trial_reward2: float = 0.0
 
-            for step in range(EPISODE_LENGTH):
+            for step in range(TEST_EPISODE_LENGTH):
                 s0 = env.state
                 a = policy1.get_best_action(s0)
                 env.apply_action(a)
@@ -64,11 +65,14 @@ def evaluate_agents(env, policy1, reward1, env2, policy2, reward2, init, init2):
                     print("final", s1)
                     break
 
-            env2.reset(CraftState(initial_state2[0], initial_state2[1], env.state.key_x, env.state.key_y, set(), initial_state2[0], initial_state2[1]))
+            facts = set()
+            if env.state.facts[4] == 1:
+                facts.add(4)
+            env2.reset(CraftState(initial_state2[0], initial_state2[1], env.state.key_x, env.state.key_y, facts, initial_state2[0], initial_state2[1]))
             print(env2.state, "!!!")
             print("(*****************")
 
-            for step in range(EPISODE_LENGTH):
+            for step in range(TEST_EPISODE_LENGTH):
                 s0 = env2.state
                 a = policy2.get_best_action(s0)
                 env2.apply_action(a)
@@ -91,8 +95,11 @@ def create_init(key_locations, init_locations):
     ans = []
     for i in key_locations:
         for j in init_locations:
-            ans.append(CraftState(j[0], j[1], i[1], i[0], set(), j[0], j[1]))
-            print("init: ", CraftState(j[0], j[1], i[1], i[0], set(), j[0], j[1]).uid)
+            ans.append(CraftState(j[0], j[1], i[1], i[0], (), j[0], j[1]))
+            print("init: ", CraftState(j[0], j[1], i[1], i[0],(), j[0], j[1]).uid)
+            facts, _ = update_facts((), {}, 0, True)
+            ans.append(CraftState(j[0], j[1], i[1], i[0], facts, j[0], j[1]))
+            print("init: ", CraftState(j[0], j[1], i[1], i[0],facts, j[0], j[1]).uid)
     return ans
 
 
@@ -102,8 +109,8 @@ def visualize(foldername, labels=["First Agent", "Second Agent", "Average"], num
     x = []
     for i in range(len(labels)):
         results.append([])
-    for a in range(10, 500):
-        if a % 20 != 0:
+    for a in range(0, 100):
+        if a % 10 != 0:
             continue
         alpha.append(a)
         x.append(a/100.0)
@@ -140,13 +147,13 @@ def train(filename, seed, foldername):
     map_fn = path.join(here, "craft/map_seq.map")
 
     rng1 = Random(seed)
-    env1 = Craft(map_fn, rng1, 1, 1)
+    env1 = Craft(map_fn, rng1, 1, 1, tool_in_fact=True)
     print(env1.get_all_item())
     init = create_init(env1.get_all_item(), [[1,1]])
 
     tasks = [[OBJECTS["box"]]]
     not_task = [OBJECTS["key"]]
-    #not_task = []
+    not_task = []
     tasks = tasks[START_TASK:END_TASK+1]
 
     with open(filename, "w") as csvfile:
@@ -159,9 +166,10 @@ def train(filename, seed, foldername):
             rng1.seed(seed + j)
 
             reward1 = ReachFacts(env1, goal, not_task)
-            policy1 = EpsilonGreedy(alpha=1.0, gamma=1.0, epsilon=0.1,
+            policy1 = EpsilonGreedy(alpha=1.0, gamma=1.0, epsilon=0.3,
                                    default_q=DEFAULT_Q, num_actions=4, rng=rng1)
             agent = Agent(env1, policy1, reward1, rng1)
+
 
 
             try:
@@ -169,21 +177,22 @@ def train(filename, seed, foldername):
                 agent.train(steps=TOTAL_STEPS1,
                             steps_per_episode=EPISODE_LENGTH, report=report)
 
-
-                for alpha in range(400, 500):
-                    if alpha % 20 != 0:
+                #print(policy1.get_Q())
+                for alpha in range(0, 100):
+                    if alpha % 10 != 0:
                         continue
                     print("alpha:", alpha /100.0)
-                    report2 = SequenceReport(csvfile, LOG_STEP, init, EPISODE_LENGTH, TRIALS)
+                    report2 = SequenceReport(csvfile, LOG_STEP, [init[0], init[2]], EPISODE_LENGTH, TRIALS)
                     rng2 = Random(seed+ 1)
                     env2 = Craft(map_fn, rng2, 1, 1)
                     reward2 = ReachFacts(env2, goal, not_task)
-                    policy2 = Empathic(alpha=1.0, gamma=1.0, epsilon=0.5,
-                               default_q=DEFAULT_Q, num_actions=4, rng=rng2, others_q=policy1.get_Q(), penalty=-2*EPISODE_LENGTH, others_alpha=alpha / 100.0)
+                    policy2 = Empathic(alpha=1.0, gamma=1.0, epsilon=0.2,
+                               default_q=DEFAULT_Q, num_actions=5, rng=rng2, others_q=policy1.get_Q(), penalty=-2*EPISODE_LENGTH, others_alpha=alpha / 100.0)
                     agent2 = Agent(env2, policy2, reward2, rng2)
 
                     agent2.train(steps=TOTAL_STEPS2,
                             steps_per_episode=EPISODE_LENGTH, report=report2)
+
                     test(env2, policy2, reward2, env1, policy1, reward1, init, alpha, foldername)
 
             except KeyboardInterrupt:
@@ -210,8 +219,8 @@ def test(env1, policy1, reward1, env2, policy2, reward2, init, alpha, foldername
         writer.writerow(selfish_reward)
         writer.writerow(all_reward)
 
-#folder_name = datetime.now().strftime("%d%m%Y_%H%M%S")
-#os.makedirs(os.path.join("../datasets/", folder_name))
-#train("../../../data/test.csv", 2019, "25052021_230919")
-visualize("25052021_230919")
+folder_name = datetime.now().strftime("%d%m%Y_%H%M%S")
+os.makedirs(os.path.join("../datasets/", folder_name))
+train("../../../data/test.csv", 2019, folder_name)
+visualize(folder_name)
 #create_datasets("25052021_223024", 200)

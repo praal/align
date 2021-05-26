@@ -2,7 +2,7 @@ from random import Random
 from typing import Dict, Hashable, List, Optional, Tuple
 
 from environment import ActionId, State
-from environment.craft import OBJECTS
+from environment.craft import OBJECTS, update_facts
 from .rl import Policy
 
 class Empathic(Policy):
@@ -70,7 +70,10 @@ class Empathic(Policy):
                          restrict: Optional[List[int]] = None) -> ActionId:
         if self.rng.random() < self.epsilon:
             if restrict is None:
-                restrict = list(range(self.num_actions))
+                if state.x == 8 and state.y == 1:
+                    restrict = list(range(self.num_actions) )
+                else:
+                    restrict = list(range(self.num_actions - 1))
             return self.rng.choice(restrict)
         else:
             return self.get_best_action(state, restrict)
@@ -79,7 +82,11 @@ class Empathic(Policy):
         if state.key_x == -1:
             return self.penalty
         fact_list = [False] * len(OBJECTS)
+        if state.facts[OBJECTS["extra"]]:
+            fact_list[4] = True
+
         facts = tuple(fact_list)
+
         uid = (init_x, init_y, state.key_x, state.key_y, facts)
 
         max_q = self.others_q.get((uid, 0), self.default_q)
@@ -89,6 +96,7 @@ class Empathic(Policy):
                 max_q = q
         if max_q[0] == 0:
             print("zero!", uid)
+
         return max_q[0]
 
 

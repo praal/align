@@ -9,17 +9,20 @@ ACTIONS: List[Tuple[int, int]] = [
     (0, -1),  # up
     (-1, 0),  # left
     (1, 0),   # right
+    (0, 0),
 ]
 
 key_IND = 0
 
 OBJECTS = dict([(v, k) for k, v in enumerate(
-    ["key", "wood", "hammer", "box"])])
+    ["key", "wood", "hammer", "box", "extra"])])
 
 
-def update_facts(facts: Sequence[bool], objects: Observation, is_key):
+def update_facts(facts: Sequence[bool], objects: Observation, is_key,tool_in_fac=False, put_extra=False):
     state = set([i for i, v in enumerate(facts) if v])
     key_change = 0
+    if tool_in_fac:
+        state.add(OBJECTS["extra"])
     for o in objects:
 
         if o == "key":
@@ -30,17 +33,23 @@ def update_facts(facts: Sequence[bool], objects: Observation, is_key):
             elif is_key:
                 state.add(OBJECTS[o])
                 key_change = -1
-        elif o in OBJECTS and OBJECTS["key"] in state:
+        elif o in OBJECTS:
              state.add(OBJECTS[o])
 
-
+    if "warehouse" in objects:
+        if "hammer" in OBJECTS:
+            state.add((OBJECTS["hammer"]))
+        if put_extra:
+            state.add(OBJECTS["extra"])
 
     if "factory" in objects:
         if OBJECTS["wood"] in state and OBJECTS["key"] in state and OBJECTS["hammer"] in state:
             state.add(OBJECTS["box"])
-    if "warehouse" in objects:
-        if "hammer" in OBJECTS:
-            state.add((OBJECTS["hammer"]))
+        if OBJECTS["wood"] in state and OBJECTS["key"] in state and OBJECTS["extra"] in state:
+            state.add(OBJECTS["box"])
+
+
+
     return state, key_change
 
 
@@ -68,7 +77,7 @@ class CraftState(State):
 
     @staticmethod
     def random(rng: Random,
-               map_data: Sequence[Sequence[Observation]], key_locations: List[List[int]], default_x, default_y) -> 'CraftState':
+               map_data: Sequence[Sequence[Observation]], key_locations: List[List[int]], default_x, default_y, tool_in_fact) -> 'CraftState':
 
         while True:
 
@@ -78,7 +87,12 @@ class CraftState(State):
             key_y = key_locations[ind][0]
             key_x = key_locations[ind][1]
             if "wall" not in map_data[y][x] and "wall" not in map_data[key_y][key_x]:
-                facts, _ = update_facts((), map_data[y][x], 0)
+                next_tool = False
+                if tool_in_fact:
+                    if rng.random() < 0.5:
+                        next_tool = True
+
+                facts, _ = update_facts((), map_data[y][x], 0, next_tool)
                 return CraftState(x, y, key_x, key_y, facts, default_x, default_y)
 
 
@@ -119,7 +133,7 @@ class Craft(Environment[CraftState]):
     map_data = [[]]
     num_actions = 4
 
-    def __init__(self, map_fn: str, rng: Random, default_x, default_y, noise = 0.0):
+    def __init__(self, map_fn: str, rng: Random, default_x, default_y, tool_in_fact = False, noise = 0.0):
         self.map_data = load_map(map_fn)
         self.height = len(self.map_data)
         self.width = len(self.map_data[0])
@@ -128,7 +142,8 @@ class Craft(Environment[CraftState]):
         self.default_x = default_x
         self.default_y = default_y
         self.noise = noise
-        super().__init__(CraftState.random(self.rng, self.map_data, self.key_locations, default_x, default_y))
+        self.tool_in_fact_default = tool_in_fact
+        super().__init__(CraftState.random(self.rng, self.map_data, self.key_locations, default_x, default_y, self.tool_in_fact_default))
 
 
     def get_all_item(self, item="key"):
@@ -155,7 +170,10 @@ class Craft(Environment[CraftState]):
         if x == self.state.key_x and y == self.state.key_y:
             is_key = True
 
-        new_facts, key_change = update_facts(self.state.facts, objects, is_key)
+        put_extra = False
+        if a == 4:
+            put_extra = True
+        new_facts, key_change = update_facts(self.state.facts, objects, is_key, False, put_extra)
 
         new_key_x = self.state.key_x
         new_key_y = self.state.key_y
@@ -171,7 +189,6 @@ class Craft(Environment[CraftState]):
             new_key_x = -1
             new_key_y = -1
 
-
         self.state = CraftState(x, y, new_key_x, new_key_y, new_facts, self.default_x, self.default_y)
 
         logging.debug("success, current state is %s", self.state)
@@ -186,7 +203,7 @@ class Craft(Environment[CraftState]):
         if state is not None:
             self.state = state
         else:
-            self.state = CraftState.random(self.rng, self.map_data, self.key_locations, self.default_x, self.default_y)
+            self.state = CraftState.random(self.rng, self.map_data, self.key_locations, self.default_x, self.default_y, self.tool_in_fact_default)
     @staticmethod
     def label(state: CraftState) -> FrozenSet[int]:
         return frozenset([i for i in range(len(OBJECTS)) if state.facts[i]])
