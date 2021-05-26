@@ -2,7 +2,7 @@ from random import Random
 from typing import Dict, Hashable, List, Optional, Tuple
 
 from environment import ActionId, State
-
+from environment.craft import OBJECTS
 from .rl import Policy
 
 class Empathic(Policy):
@@ -14,7 +14,7 @@ class Empathic(Policy):
     rng: Random
 
     def __init__(self, alpha: float, gamma: float, epsilon: float, default_q: float,
-                 num_actions: int, rng: Random, others_q, penalty: int, others_alpha: float):
+                 num_actions: int, rng: Random, others_q, penalty: int, others_alpha: float, our_alpha=0.0):
         self.alpha = alpha
         self.gamma = gamma
         self.epsilon = epsilon
@@ -25,6 +25,7 @@ class Empathic(Policy):
         self.others_q = others_q
         self.penalty = penalty
         self.others_alpha = others_alpha
+        self.our_alpha = 1.0
 
     def clear(self):
         self.Q = {}
@@ -75,9 +76,11 @@ class Empathic(Policy):
             return self.get_best_action(state, restrict)
 
     def estimate_other(self, state, init_x=1, init_y=1):
-        if state.iron_x == -1:
+        if state.key_x == -1:
             return self.penalty
-        uid = (init_x, init_y, state.iron_x, state.iron_y, tuple([False, False, False]))
+        fact_list = [False] * len(OBJECTS)
+        facts = tuple(fact_list)
+        uid = (init_x, init_y, state.key_x, state.key_y, facts)
 
         max_q = self.others_q.get((uid, 0), self.default_q)
         for action in range(1, self.num_actions):
@@ -85,7 +88,7 @@ class Empathic(Policy):
             if q > max_q:
                 max_q = q
         if max_q[0] == 0:
-            print(uid)
+            print("zero!", uid)
         return max_q[0]
 
 
@@ -96,9 +99,9 @@ class Empathic(Policy):
             others = 0
             for i in range(len(p)):
                 others += p[i] * self.estimate_other(s1, init_x[i][0], init_x[i][1])
-            q += self.alpha * (r + self.others_alpha * others)
+            q += self.alpha * (self.our_alpha * r + self.others_alpha * others)
         else:
-            q += self.alpha * (r + self.gamma * (self.estimate(s1)))
+            q += self.alpha * (self.our_alpha * r + self.gamma * (self.estimate(s1)))
 
         self.Q[(s0.uid, a)] = q, True
 

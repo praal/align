@@ -23,10 +23,13 @@ from utils.report import SequenceReport
 from rl.empathic_policy import Empathic
 from environment.craft import OBJECTS
 
-DEFAULT_Q = 0.0
+DEFAULT_Q = -1000.0
 
-TOTAL_STEPS1 = 200000
-TOTAL_STEPS2 = 400000
+TOTAL_STEPS1 = 800000
+TOTAL_STEPS2 = 2000000
+TOTAL_STEPS3 = 600000
+TOTAL_STEPS4 = 800000
+TOTAL_STEPS5 = 2500000
 EPISODE_LENGTH = 1000
 LOG_STEP = 10000
 TRIALS = 5
@@ -58,6 +61,7 @@ def evaluate_agents(env, rng1,policy1, reward1, env2, rng2, policy2, reward2, in
                 a = policy1.get_best_action(s0)
                 env.apply_action(a)
                 s1 = env.state
+                print(s0, "----", a, "--->", s1)
                 step_reward, finished = reward1(s0, a, s1)
 
                 if not finished:
@@ -66,18 +70,24 @@ def evaluate_agents(env, rng1,policy1, reward1, env2, rng2, policy2, reward2, in
                 logging.debug("(%s, %s, %s) -> %s", s0, a, s1, step_reward)
 
                 if finished:
+                    print("final", s1)
                     break
 
-            env2.reset(CraftState(initial_state2[0], initial_state2[1], env.state.iron_x, env.state.iron_y, set(), initial_state2[0], initial_state2[1]))
-            print(env2.state)
+            env2.reset(CraftState(initial_state2[0], initial_state2[1], env.state.key_x, env.state.key_y, set(), initial_state2[0], initial_state2[1]))
+            print(env2.state, "!!!")
+            print("(*****************")
 
             for step in range(EPISODE_LENGTH):
 
                 s0 = env2.state
 
                 a = policy2.get_best_action(s0)
+
+
                 env2.apply_action(a)
+
                 s1 = env2.state
+
                 step_reward, finished = reward2(s0, a, s1)
 
                 if not finished:
@@ -99,20 +109,21 @@ def evaluate_agents(env, rng1,policy1, reward1, env2, rng2, policy2, reward2, in
     return state_rewards, state_rewards2
 
 
-def create_init(iron_locations, init_locations):
+def create_init(key_locations, init_locations):
     ans = []
-    for i in iron_locations:
+    for i in key_locations:
         for j in init_locations:
             ans.append(CraftState(j[0], j[1], i[1], i[0], set(), j[0], j[1]))
+            print("init: ", CraftState(j[0], j[1], i[1], i[0], set(), j[0], j[1]).uid)
     return ans
 
-def visualize(results, labels, num_exp=10):
+def visualize(results, labels, num_exp=5):
     results_list = []
     alpha = []
     x = []
     for key, value in results[0].items():
         alpha.append(key)
-        x.append(key/10.0)
+        x.append(key/100.0)
     print("alpha", alpha)
     for i in range(len(results)):
         results_list.append([])
@@ -126,6 +137,12 @@ def visualize(results, labels, num_exp=10):
             for k in range(len(results_list[i][j])):
                 if results_list[i][j][k] > 2.0 * means[j]:
                     pass
+
+    folder_name = datetime.now().strftime("%d%m%Y_%H%M%S")
+    os.makedirs(os.path.join("../datasets/", folder_name))
+    ret_dataset = pd.DataFrame(results_list)
+    ret_dataset.to_csv(os.path.join("../datasets/", folder_name, f"seq.csv"))
+
     for i in range(len(results_list)):
         means = np.mean(results_list[i], axis=1)
 
@@ -134,11 +151,6 @@ def visualize(results, labels, num_exp=10):
         ci = 1.96 * std / np.sqrt(num_exp)
         plt.fill_between(x, (means - ci), (means + ci), alpha=.1)
 
-
-    folder_name = datetime.now().strftime("%d%m%Y_%H%M%S")
-    os.makedirs(os.path.join("../datasets/", folder_name))
-    ret_dataset = pd.DataFrame(results_list)
-    ret_dataset.to_csv(os.path.join("../datasets/", folder_name, f"seq.csv"))
 
     plt.xlabel("Caring Factor (Alpha)")
     plt.ylabel("Average Reward")
@@ -150,22 +162,23 @@ def visualize(results, labels, num_exp=10):
 def run(filename, seed):
 
     here = path.dirname(__file__)
-    map_fn = path.join(here, "craft/mini.map")
+    map_fn = path.join(here, "craft/map_seq.map")
 
     rng = Random(seed)
     env = Craft(map_fn, rng, 1, 1)
+    print(env.get_all_item())
     init = create_init(env.get_all_item(), [[1,1]])
 
-    tasks = [[OBJECTS["axe"]]]
-    not_task = [OBJECTS["iron"]]
-    #not_task = []
+    tasks = [[OBJECTS["box"]]]
+    not_task = [OBJECTS["key"]]
+    not_task = []
     tasks = tasks[START_TASK:END_TASK+1]
 
     with open(filename, "w") as csvfile:
         emp_reward = {}
         selfish_reward = {}
         all_reward = {}
-        for random_seed in range(10, 20):
+        for random_seed in range(10, 11):
             print("$$$$$$$$$$$", random_seed)
             print("ql: begin experiment")
             report = SequenceReport(csvfile, LOG_STEP, init, EPISODE_LENGTH, TRIALS)
@@ -185,25 +198,40 @@ def run(filename, seed):
                     agent.train(steps=TOTAL_STEPS1,
                                 steps_per_episode=EPISODE_LENGTH, report=report)
 
-                    for alpha in range(0, 20):
 
-                        print("alpha:", alpha /10.0)
+                    for alpha in range(200, 201):
+                        #if alpha % 5 != 0:
+                         #   continue
+                        print("alpha:", alpha /100.0)
                         report2 = SequenceReport(csvfile, LOG_STEP, init, EPISODE_LENGTH, TRIALS)
                         rng2 = Random(seed+random_seed+ 1)
                         env2 = Craft(map_fn, rng2, 1, 1)
-                        reward2 = ReachFacts(env, goal, not_task)
-                        policy2 = Empathic(alpha=1.0, gamma=1.0, epsilon=0.1,
-                                   default_q=DEFAULT_Q, num_actions=4, rng=rng, others_q=policy1.get_Q(), penalty=-1*EPISODE_LENGTH, others_alpha=alpha / 10.0)
+                        reward2 = ReachFacts(env2, goal, not_task)
+                        policy2 = Empathic(alpha=1.0, gamma=1.0, epsilon=0.4,
+                                   default_q=DEFAULT_Q, num_actions=4, rng=rng2, others_q=policy1.get_Q(), penalty=-2*EPISODE_LENGTH, others_alpha=alpha / 100.0)
                         agent2 = Agent(env2, policy2, reward2, rng2)
 
 
-                        start = time()
-                        agent2.train(steps=TOTAL_STEPS2,
-                                steps_per_episode=EPISODE_LENGTH, report=report2)
 
+                        start = time()
+                        if alpha < 100:
+                            agent2.train(steps=TOTAL_STEPS2,
+                                steps_per_episode=EPISODE_LENGTH, report=report2)
+                        elif alpha < 150:
+                            agent2.train(steps=TOTAL_STEPS3,
+                                         steps_per_episode=EPISODE_LENGTH, report=report2)
+                        elif alpha < 200:
+                            agent2.train(steps=TOTAL_STEPS4,
+                                         steps_per_episode=EPISODE_LENGTH, report=report2)
+
+                        else:
+                            agent2.train(steps=TOTAL_STEPS5,
+                                        steps_per_episode=EPISODE_LENGTH, report=report2)
                         end = time()
+                        print(policy2.Q)
                         print("ql: Ran task {} for {} seconds.".format(j + START_TASK,end - start))
-                        emp, sel = evaluate_agents(env2, rng2,policy2, reward2, env2, rng, policy1, reward, [init[0]], [[1, 1]])
+                        emp, sel = evaluate_agents(env2, rng2,policy2, reward2, env, rng, policy1, reward, [init[0]], [[1, 1]])
+
                         if alpha not in emp_reward:
                             emp_reward[alpha] = []
                             selfish_reward[alpha] = []
