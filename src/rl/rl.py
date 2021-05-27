@@ -4,7 +4,7 @@ from random import Random
 from typing import List, Optional, Sequence, Tuple
 
 from environment import ActionId, Environment, RewardFn, State
-from utils import Report
+from utils.report import Report
 
 
 class Policy(ABC):
@@ -85,7 +85,7 @@ class Agent:
 
         self.rng.setstate(rng_state)
 
-    def evaluate(self, states: Sequence[State], steps: int, trials: int, is_iron = True,
+    def evaluate(self, states: Sequence[State], steps: int, trials: int,
                  name: str = "", ) -> List[float]:
         state_rewards: List[float] = []
         rng_state = self.rng.getstate()
@@ -98,12 +98,8 @@ class Agent:
                 trial_reward: float = 0.0
                 for step in range(steps):
                     s0 = self.environment.state
-
                     a = self.policy.get_best_action(s0)
-                    if is_iron == 0 and 1.0 * step > 0.5 * steps:
-                        is_iron = 1
-
-                    self.environment.apply_action(a, is_iron)
+                    self.environment.apply_action(a)
 
                     s1 = self.environment.state
 
@@ -133,7 +129,6 @@ class Agent:
                       report: Optional[Report] = None) -> Tuple[int, float,
                                                                 bool]:
         self.environment.reset()
-        is_iron = 1
 
         self.reward.reset()
         self.policy.reset(evaluation=False)
@@ -150,7 +145,7 @@ class Agent:
             s0 = self.environment.state
 
             a = self.policy.get_train_action(s0)
-            self.environment.apply_action(a, is_iron)
+            self.environment.apply_action(a)
 
             s1 = self.environment.state
 

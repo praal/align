@@ -4,7 +4,7 @@ from typing import IO, Sequence
 
 from environment import State
 
-import rl
+
 
 
 class Report:
@@ -16,7 +16,7 @@ class Report:
         self.steps = steps
         self.trials = trials
 
-    def evaluate(self, agent: 'rl.Agent', step: int, force: bool = False):
+    def evaluate(self, agent, step: int, force: bool = False):
         if not force and step % self.log_step != 0:
             return
         values = agent.evaluate(self.states, self.steps, self.trials,
@@ -45,7 +45,7 @@ class SequenceReport(Report):
         self.start = 0
         super().__init__(logfile, log_step, states, steps, trials)
 
-    def evaluate(self, agent: 'rl.Agent', step: int, force: bool = False):
+    def evaluate(self, agent, step: int, force: bool = False):
         if force or step % self.log_step == 0:
             super().evaluate(agent, step + self.start, force=True)
 

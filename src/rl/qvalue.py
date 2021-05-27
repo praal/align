@@ -30,6 +30,7 @@ class Greedy(Policy):
         return self.Q.copy()
 
     def estimate(self, state: State) -> float:
+
         max_q = self.Q.get((state.uid, 0), self.default_q)
         for action in range(1, self.num_actions):
             q = self.Q.get((state.uid, action), self.default_q)
@@ -67,6 +68,19 @@ class Greedy(Policy):
 
     def reset(self, evaluation: bool):
         self.evaluation = evaluation
+
+    def get_policy(self):
+        ans = {}
+        for state,_ in self.Q:
+            max_q = self.Q.get((state, 0), self.default_q)
+            max_action = 0
+            for action in range(1, self.num_actions):
+                q = self.Q.get((state, action), self.default_q)
+                if q > max_q:
+                    max_q = q
+                    max_action = action
+            ans[state] = max_action
+        return ans
 
     def report(self) -> str:
         return "|Q| = {}".format(len(self.Q))
