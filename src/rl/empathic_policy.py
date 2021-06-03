@@ -14,7 +14,7 @@ class Empathic(Policy):
     rng: Random
 
     def __init__(self, alpha: float, gamma: float, epsilon: float, default_q: float,
-                 num_actions: int, rng: Random, others_q, penalty: int, others_alpha, objects, problem_mood, others_dist = [1.0], others_init = [[1, 1]], our_alpha=1.0, caring_func = "sum", restricted = [], diff=False):
+                 num_actions: int, rng: Random, others_q, penalty: int, others_alpha, objects, problem_mood, others_dist = [1.0], others_init = [[1, 1]], our_alpha=1.0, caring_func = "sum", restricted = [], options = []):
         self.alpha = alpha
         self.gamma = gamma
         self.epsilon = epsilon
@@ -34,7 +34,7 @@ class Empathic(Policy):
         self.default_key_x = 2
         self.default_key_y = 3
         self.restricted = restricted
-        self.diff = diff
+        self.options = options
 
 
     def clear(self):
@@ -102,7 +102,24 @@ class Empathic(Policy):
             print("zero!", uid)
         return max_q[0]
 
+    def compute_options(self, state):
+        ans = 0.0
+        for i, option in enumerate(self.options):
+            facts = tuple([False] * len(self.objects))
+            uid = (self.others_init[i][0], self.others_init[i][1], state.key_x, state.key_y, facts)
+
+            found = False
+            for init_option in option:
+                if uid == init_option:
+                    found = True
+                    break
+            if found:
+                ans += self.others_dist[i]
+        return self.others_alpha[0] * ans
+
     def estimate_other(self, state, prev_state):
+        if self.problem_mood == 4:
+            return self.compute_options(state)
         ans = 0
         first = True
         for other in range(len(self.others_q)):
@@ -150,7 +167,10 @@ class Empathic(Policy):
         q = (1.0 - self.alpha) * self.Q.get((s0.uid, a), self.default_q)[0]
         if end:
             others = self.estimate_other(s1, s0)
-            q += self.alpha * (self.our_alpha * r + others)
+
+            q += self.alpha * (self.our_alpha * r + self.gamma * others)
+
+
         else:
             q += self.alpha * (self.our_alpha * r + self.gamma * (self.estimate(s1)))
 

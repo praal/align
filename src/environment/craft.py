@@ -23,6 +23,8 @@ OBJECTS2 = dict([(v, k) for k, v in enumerate(
 
 OBJECTS3 = dict([(v, k) for k, v in enumerate(["target", "fence"])])
 
+OBJECTS4 = dict([(v, k) for k, v in enumerate(["key", "target"])])
+
 def update_facts(problem_mood,facts: Sequence[bool], objects: Observation, is_key,tool_in_fac=False, wood_in_fac = False, put_extra=False):
     state = set([i for i, v in enumerate(facts) if v])
     key_change = 0
@@ -82,6 +84,17 @@ def update_facts(problem_mood,facts: Sequence[bool], objects: Observation, is_ke
         if "fence" in objects and put_extra:
             state.add(OBJECTS3["fence"])
         return state, 0
+    elif problem_mood == 4:
+        if "key" in objects and is_key:
+            state.add(OBJECTS4["key"])
+            key_change = -1
+        elif OBJECTS4["key"] in state and "key" in objects:
+            state.remove(OBJECTS4["key"])
+            key_change = 1
+        elif "factory" in objects and OBJECTS4["key"] in state:
+            state.add(OBJECTS4["target"])
+        return state, key_change
+
 
 
 class CraftState(State):
@@ -225,6 +238,7 @@ class Craft(Environment[CraftState]):
         if a == 4:
             put_extra = True
         new_facts, key_change = update_facts(self.problem_mood, self.state.facts, objects, is_key, False, False, put_extra)
+
 
         new_key_x = self.state.key_x
         new_key_y = self.state.key_y
