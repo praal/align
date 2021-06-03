@@ -14,50 +14,74 @@ ACTIONS: List[Tuple[int, int]] = [
 
 key_IND = 0
 
-OBJECTS = dict([(v, k) for k, v in enumerate(
+OBJECTS1 = dict([(v, k) for k, v in enumerate(
     ["key", "wood", "hammer", "box", "extra", "extrawood"])])
 
 
-def update_facts(facts: Sequence[bool], objects: Observation, is_key,tool_in_fac=False, wood_in_fac = False, put_extra=False):
+OBJECTS2 = dict([(v, k) for k, v in enumerate(
+    ["doll", "played"])])  # , "wall"])])
+
+OBJECTS3 = dict([(v, k) for k, v in enumerate(["target", "fence"])])
+
+def update_facts(problem_mood,facts: Sequence[bool], objects: Observation, is_key,tool_in_fac=False, wood_in_fac = False, put_extra=False):
     state = set([i for i, v in enumerate(facts) if v])
     key_change = 0
-    if tool_in_fac:
-        state.add(OBJECTS["extra"])
+    if problem_mood == 1:
 
-    if wood_in_fac:
-        state.add(OBJECTS["extrawood"])
-    for o in objects:
+        if tool_in_fac:
+            state.add(OBJECTS1["extra"])
 
-        if o == "key":
-            if OBJECTS["key"] in state:
-                state.remove(OBJECTS["key"])
-                key_change = 1
+        if wood_in_fac:
+            state.add(OBJECTS1["extrawood"])
+        for o in objects:
 
-            elif is_key:
-                state.add(OBJECTS[o])
-                key_change = -1
-        elif o in OBJECTS:
-            if o == "wood" and put_extra:
-                state.add(OBJECTS["extrawood"])
-            state.add(OBJECTS[o])
+            if o == "key":
+                if OBJECTS1["key"] in state:
+                    state.remove(OBJECTS1["key"])
+                    key_change = 1
 
-    if "warehouse" in objects:
-        if "hammer" in OBJECTS:
-            state.add((OBJECTS["hammer"]))
-        if put_extra:
-            state.add(OBJECTS["extra"])
+                elif is_key:
+                    state.add(OBJECTS1[o])
+                    key_change = -1
+            elif o in OBJECTS1:
+                if o == "wood" and put_extra:
+                    state.add(OBJECTS1["extrawood"])
+                state.add(OBJECTS1[o])
 
-    if "factory" in objects:
-        if OBJECTS["wood"] in state and OBJECTS["key"] in state and OBJECTS["hammer"] in state:
-            state.add(OBJECTS["box"])
-        if OBJECTS["wood"] in state and OBJECTS["key"] in state and OBJECTS["extra"] in state:
-            state.add(OBJECTS["box"])
-        if OBJECTS["extrawood"] in state and OBJECTS["key"] in state and OBJECTS["hammer"] in state:
-            state.add(OBJECTS["box"])
-        if OBJECTS["extrawood"] in state and OBJECTS["key"] in state and OBJECTS["extra"] in state:
-            state.add(OBJECTS["box"])
+        if "warehouse" in objects:
+            if "hammer" in OBJECTS1:
+                state.add((OBJECTS1["hammer"]))
+            if put_extra:
+                state.add(OBJECTS1["extra"])
 
-    return state, key_change
+        if "factory" in objects:
+            if OBJECTS1["wood"] in state and OBJECTS1["key"] in state and OBJECTS1["hammer"] in state:
+                state.add(OBJECTS1["box"])
+            if OBJECTS1["wood"] in state and OBJECTS1["key"] in state and OBJECTS1["extra"] in state:
+                state.add(OBJECTS1["box"])
+            if OBJECTS1["extrawood"] in state and OBJECTS1["key"] in state and OBJECTS1["hammer"] in state:
+                state.add(OBJECTS1["box"])
+            if OBJECTS1["extrawood"] in state and OBJECTS1["key"] in state and OBJECTS1["extra"] in state:
+                state.add(OBJECTS1["box"])
+
+        return state, key_change
+
+    elif problem_mood == 2:
+        if "key" in objects and is_key:
+            state.add(OBJECTS2["played"])
+            state.add(OBJECTS2["doll"])
+            key_change = -1
+
+        if OBJECTS2["doll"] in state and put_extra:
+            state.remove(OBJECTS2["doll"])
+            key_change = 1
+        return state, key_change
+    elif problem_mood == 3:
+        if "key" in objects and is_key:
+            state.add(OBJECTS3["target"])
+        if "fence" in objects and put_extra:
+            state.add(OBJECTS3["fence"])
+        return state, 0
 
 
 class CraftState(State):
@@ -65,12 +89,16 @@ class CraftState(State):
     map_data: Tuple[Tuple[Observation, ...], ...]
 
 
-    def __init__(self, x: int, y: int, key_x, key_y,  facts: Set[int], default_x, default_y):
+    def __init__(self, x: int, y: int, key_x, key_y,  facts: Set[int], default_x, default_y, problem_mood):
         self.x = x
         self.y = y
         self.default_x = default_x
         self.default_y = default_y
-        fact_list = [False] * len(OBJECTS)
+        self.problem_mood = problem_mood
+        if self.problem_mood == 1:
+            fact_list = [False] * len(OBJECTS1)
+        else:
+            fact_list = [False] * len(OBJECTS2)
         for fact in facts:
             fact_list[fact] = True
         self.facts = tuple(fact_list)
@@ -83,11 +111,10 @@ class CraftState(State):
         return "({:2d}, {:2d}, {:2d}, {:2d}, {})".format(self.x, self.y, self.key_x, self.key_y, self.facts)
 
     @staticmethod
-    def random(rng: Random,
-               map_data: Sequence[Sequence[Observation]], key_locations: List[List[int]], default_x, default_y, tool_in_fact, wood_in_fact) -> 'CraftState':
+    def random(problem_mood, rng: Random,
+               map_data: Sequence[Sequence[Observation]], key_locations: List[List[int]], default_x, default_y, tool_in_fact = False, wood_in_fact=False) -> 'CraftState':
 
         while True:
-
             x = default_x
             y = default_y
             ind = rng.randrange(len(key_locations))
@@ -102,8 +129,8 @@ class CraftState(State):
                 if wood_in_fact:
                     if rng.random() < 0.5:
                         next_wood = True
-                facts, _ = update_facts((), map_data[y][x], 0, next_tool, next_wood)
-                return CraftState(x, y, key_x, key_y, facts, default_x, default_y)
+                facts, _ = update_facts(problem_mood, (), map_data[y][x], 0, next_tool, next_wood)
+                return CraftState(x, y, key_x, key_y, facts, default_x, default_y, problem_mood)
 
 
 MAPPING: Mapping[str, FrozenSet[str]] = {
@@ -112,7 +139,6 @@ MAPPING: Mapping[str, FrozenSet[str]] = {
     'a': frozenset(["wood"]),
     'b': frozenset(["toolshed"]),
     'c': frozenset(["workbench"]),
-    'd': frozenset(["grass"]),
     'e': frozenset(["factory"]),
     'f': frozenset(["iron"]),
     'k': frozenset(["key"]),
@@ -120,6 +146,7 @@ MAPPING: Mapping[str, FrozenSet[str]] = {
     'w': frozenset(["warehouse"]),
     'D': frozenset(["door"]),
     'h': frozenset(["gem"]),
+    'p': frozenset(["fence"]),
     ' ': frozenset(),
     }
 
@@ -143,7 +170,9 @@ class Craft(Environment[CraftState]):
     map_data = [[]]
     num_actions = 4
 
-    def __init__(self, map_fn: str, rng: Random, default_x, default_y, tool_in_fact = False, wood_in_fact = False,noise = 0.0):
+    def __init__(self, map_fn: str, rng: Random, default_x, default_y, objects, problem_mood, tool_in_fact = False, wood_in_fact = False,noise = 0.0):
+        print("###########", problem_mood)
+        self.problem_mood = problem_mood
         self.map_data = load_map(map_fn)
         self.height = len(self.map_data)
         self.width = len(self.map_data[0])
@@ -154,7 +183,8 @@ class Craft(Environment[CraftState]):
         self.noise = noise
         self.tool_in_fact_default = tool_in_fact
         self.wood_in_fact_default = wood_in_fact
-        super().__init__(CraftState.random(self.rng, self.map_data, self.key_locations, default_x, default_y, self.tool_in_fact_default, self.wood_in_fact_default))
+        self.objects = objects
+        super().__init__(CraftState.random(self.problem_mood, self.rng, self.map_data, self.key_locations, default_x, default_y, self.tool_in_fact_default, self.wood_in_fact_default))
 
 
     def get_all_item(self, item="key"):
@@ -184,7 +214,7 @@ class Craft(Environment[CraftState]):
         put_extra = False
         if a == 4:
             put_extra = True
-        new_facts, key_change = update_facts(self.state.facts, objects, is_key, False, False, put_extra)
+        new_facts, key_change = update_facts(self.problem_mood, self.state.facts, objects, is_key, False, False, put_extra)
 
         new_key_x = self.state.key_x
         new_key_y = self.state.key_y
@@ -200,13 +230,15 @@ class Craft(Environment[CraftState]):
             new_key_x = -1
             new_key_y = -1
 
-        self.state = CraftState(x, y, new_key_x, new_key_y, new_facts, self.default_x, self.default_y)
+        self.state = CraftState(x, y, new_key_x, new_key_y, new_facts, self.default_x, self.default_y, self.problem_mood)
 
         logging.debug("success, current state is %s", self.state)
 
     def cost(self, s0: CraftState, a: ActionId, s1: CraftState) -> float:
-        if not s0.facts[OBJECTS["extrawood"]] and s1.facts[OBJECTS["extrawood"]] and a == 4:
+        if "extrawood" in self.objects and not s0.facts[self.objects["extrawood"]] and s1.facts[self.objects["extrawood"]] and a == 4:
             return 12.0
+        if "fence" in self.objects and not s0.facts[self.objects["fence"]] and s1.facts[self.objects["fence"]] and a == 4:
+            return 50.0
         return 1.0
 
     def observe(self, state: CraftState) -> Observation:
@@ -216,7 +248,4 @@ class Craft(Environment[CraftState]):
         if state is not None:
             self.state = state
         else:
-            self.state = CraftState.random(self.rng, self.map_data, self.key_locations, self.default_x, self.default_y, self.tool_in_fact_default, self.wood_in_fact_default)
-    @staticmethod
-    def label(state: CraftState) -> FrozenSet[int]:
-        return frozenset([i for i in range(len(OBJECTS)) if state.facts[i]])
+            self.state = CraftState.random(self.problem_mood, self.rng, self.map_data, self.key_locations, self.default_x, self.default_y, self.tool_in_fact_default, self.wood_in_fact_default)
