@@ -112,7 +112,7 @@ class CraftState(State):
 
     @staticmethod
     def random(problem_mood, rng: Random,
-               map_data: Sequence[Sequence[Observation]], key_locations: List[List[int]], default_x, default_y, tool_in_fact = False, wood_in_fact=False) -> 'CraftState':
+               map_data: Sequence[Sequence[Observation]], key_locations: List[List[int]], default_x, default_y, tool_in_fact = False, wood_in_fact=False, fence=False) -> 'CraftState':
 
         while True:
             x = default_x
@@ -123,13 +123,19 @@ class CraftState(State):
             if "wall" not in map_data[y][x] and "wall" not in map_data[key_y][key_x]:
                 next_tool = False
                 next_wood = False
+                next_fence = False
                 if tool_in_fact:
                     if rng.random() < 0.5:
                         next_tool = True
                 if wood_in_fact:
                     if rng.random() < 0.5:
                         next_wood = True
+                if fence:
+                    if rng.random() < 0.5:
+                        next_fence = True
                 facts, _ = update_facts(problem_mood, (), map_data[y][x], 0, next_tool, next_wood)
+                if next_fence:
+                    facts.add(1)
                 return CraftState(x, y, key_x, key_y, facts, default_x, default_y, problem_mood)
 
 
@@ -170,7 +176,7 @@ class Craft(Environment[CraftState]):
     map_data = [[]]
     num_actions = 4
 
-    def __init__(self, map_fn: str, rng: Random, default_x, default_y, objects, problem_mood, tool_in_fact = False, wood_in_fact = False,noise = 0.0):
+    def __init__(self, map_fn: str, rng: Random, default_x, default_y, objects, problem_mood, tool_in_fact = False, wood_in_fact = False, fence = False, noise = 0.0):
         print("###########", problem_mood)
         self.problem_mood = problem_mood
         self.map_data = load_map(map_fn)
@@ -184,7 +190,8 @@ class Craft(Environment[CraftState]):
         self.tool_in_fact_default = tool_in_fact
         self.wood_in_fact_default = wood_in_fact
         self.objects = objects
-        super().__init__(CraftState.random(self.problem_mood, self.rng, self.map_data, self.key_locations, default_x, default_y, self.tool_in_fact_default, self.wood_in_fact_default))
+        self.fence = fence
+        super().__init__(CraftState.random(self.problem_mood, self.rng, self.map_data, self.key_locations, default_x, default_y, self.tool_in_fact_default, self.wood_in_fact_default, self.fence))
 
 
     def get_all_item(self, item="key"):
@@ -203,7 +210,10 @@ class Craft(Environment[CraftState]):
         x, y = self.state.x + ACTIONS[a][0], self.state.y + ACTIONS[a][1]
         logging.debug("applying action %s:%s", a, ACTIONS[a])
         if x < 0 or y < 0 or x >= self.width or y >= self.height or \
-                "wall" in self.map_data[y][x]:
+                "wall" in self.map_data[y][x] :
+            return
+        if "fence" in self.map_data[y][x] and self.state.facts[self.objects["fence"]]:
+
             return
         objects = self.map_data[y][x]
 
@@ -248,4 +258,4 @@ class Craft(Environment[CraftState]):
         if state is not None:
             self.state = state
         else:
-            self.state = CraftState.random(self.problem_mood, self.rng, self.map_data, self.key_locations, self.default_x, self.default_y, self.tool_in_fact_default, self.wood_in_fact_default)
+            self.state = CraftState.random(self.problem_mood, self.rng, self.map_data, self.key_locations, self.default_x, self.default_y, self.tool_in_fact_default, self.wood_in_fact_default, self.fence)

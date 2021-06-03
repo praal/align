@@ -14,7 +14,7 @@ class Empathic(Policy):
     rng: Random
 
     def __init__(self, alpha: float, gamma: float, epsilon: float, default_q: float,
-                 num_actions: int, rng: Random, others_q, penalty: int, others_alpha, objects, problem_mood, others_dist = [1.0], others_init = [[1, 1]], our_alpha=1.0, caring_func = "sum", restricted = []):
+                 num_actions: int, rng: Random, others_q, penalty: int, others_alpha, objects, problem_mood, others_dist = [1.0], others_init = [[1, 1]], our_alpha=1.0, caring_func = "sum", restricted = [], diff=False):
         self.alpha = alpha
         self.gamma = gamma
         self.epsilon = epsilon
@@ -34,6 +34,7 @@ class Empathic(Policy):
         self.default_key_x = 2
         self.default_key_y = 3
         self.restricted = restricted
+        self.diff = diff
 
 
     def clear(self):
@@ -101,7 +102,7 @@ class Empathic(Policy):
             print("zero!", uid)
         return max_q[0]
 
-    def estimate_other(self, state):
+    def estimate_other(self, state, prev_state):
         ans = 0
         first = True
         for other in range(len(self.others_q)):
@@ -113,37 +114,42 @@ class Empathic(Policy):
                 fact_list[4] = True
             if "extrawood" in self.objects and state.facts[OBJECTS1["extrawood"]]:
                 fact_list[5] = True
-
+            if "fence" in self.objects and state.facts[1]:
+                fact_list[1] = True
             facts = tuple(fact_list)
 
             uid = (self.others_init[other][0], self.others_init[other][1], state.key_x, state.key_y, facts)
             max_q = self.get_max_q(uid, self.others_q[other])
-                       
+
             if self.caring_func == "sum":
-                ans += self.others_dist[other] * max_q
+                ans += self.others_dist[other] * self.others_alpha[other] * max_q
 
             elif self.caring_func == "min":
                 if first:
                     ans = max_q
                     first = False
                 else:
-                    ans = min(ans, max_q)
+                    ans = min(ans, self.others_alpha[other] * max_q)
             elif self.caring_func == "neg":
                 uid2 = (self.others_init[other][0], self.others_init[other][1], self.default_key_x, self.default_key_y, facts)
                 max_q2 = self.get_max_q(uid2, self.others_q[other])
-                ans += self.others_dist[other] * min(max_q2, max_q)
+                ans += self.others_alpha[other] * self.others_dist[other] * min(max_q2, max_q)
 
             else:
                 print("Error!")
-        return ans
 
+            if self.problem_mood == 3 and len(self.restricted[other]) > 0:
+                if prev_state.x == self.restricted[other][0] and prev_state.y == self.restricted[other][1]:
+                    ans += -20 * self.others_alpha[other]
+                if not state.facts[1]:
+                    ans += -20 * self.others_alpha[other]
+
+        return ans
 
     def update(self, s0: State, a: ActionId, s1: State, r: float, end: bool):
         q = (1.0 - self.alpha) * self.Q.get((s0.uid, a), self.default_q)[0]
         if end:
-            others = 0
-            for i in range(len(self.others_dist)):
-                others += self.others_alpha[i] * self.estimate_other(s1)
+            others = self.estimate_other(s1, s0)
             q += self.alpha * (self.our_alpha * r + others)
         else:
             q += self.alpha * (self.our_alpha * r + self.gamma * (self.estimate(s1)))

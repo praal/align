@@ -146,7 +146,7 @@ def train(filename, seed):
                 report1 = SequenceReport(csvfile, LOG_STEP, init1, EPISODE_LENGTH, TRIALS)
                 reward1 = ReachFacts(env1, goal, not_task, problem_mood)
                 policy1 = Empathic(alpha=1.0, gamma=1.0, epsilon=0.3,
-                                    default_q=DEFAULT_Q, num_actions=5, rng=rng1, others_q=[policy2.get_Q(), policy2.get_Q(), policy3.get_Q(), policy3.get_Q(), policy4.get_Q()], others_init=[[4,1], [4, 1], [5, 2], [5, 2], [1, 3]], others_dist=[0.2, 0.2, 0.2, 0.2, 0.2], penalty=-2*EPISODE_LENGTH, others_alpha=[10.0, 10.0, 10.0, 10.0, 10.0], objects=OBJECTS2, problem_mood = problem_mood, caring_func="min")
+                                    default_q=DEFAULT_Q, num_actions=5, rng=rng1, others_q=[policy2.get_Q(), policy2.get_Q(), policy3.get_Q(), policy3.get_Q(), policy4.get_Q()], others_init=[[4,1], [4, 1], [5, 2], [5, 2], [1, 3]], others_dist=[0.2, 0.2, 0.2, 0.2, 0.2], penalty=-2*EPISODE_LENGTH, others_alpha=[10.0, 10.0, 10.0, 10.0, 10.0], objects=OBJECTS2, problem_mood = problem_mood, caring_func="neg")
                 agent1 = Agent(env1, policy1, reward1, rng1)
 
                 agent1.train(steps=TOTAL_STEPS2,

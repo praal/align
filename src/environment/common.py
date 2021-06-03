@@ -33,8 +33,10 @@ class ReachFacts(RewardFn):
             elif s1.x == self.environment.width - 2 and s1.y == self.environment.height - 2:
                 return -cost, True
             return -cost, False
-        elif self.problem_mood == 2:
+        else:
             return -cost, True
+
+
 
     def reset(self):
         pass

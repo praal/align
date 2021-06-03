@@ -20,15 +20,15 @@ from typing import List, Tuple
 
 
 from environment import ReachFacts
-from environment.craft import Craft, CraftState, OBJECTS2, update_facts
+from environment.craft import Craft, CraftState, OBJECTS3, update_facts
 from utils.report import SequenceReport
 from rl.empathic_policy import Empathic
 
 
-DEFAULT_Q = -1000.0
+DEFAULT_Q = 0.0
 
 TOTAL_STEPS1 = 100000
-TOTAL_STEPS2 = 300000
+TOTAL_STEPS2 = 200000
 
 EPISODE_LENGTH = 1000
 TEST_EPISODE_LENGTH = 50
@@ -67,12 +67,16 @@ def evaluate_agent(env, policy1, reward1, init):
 
 
 
-def create_init(key_locations, init_locations):
+def create_init(key_locations, init_locations, fence=False):
     print("@@@@@@@@@@", key_locations)
     ans = []
     for i in key_locations:
         for j in init_locations:
             ans.append(CraftState(j[0], j[1], i[1], i[0], (), j[0], j[1], problem_mood))
+            if fence:
+                facts = set()
+                facts.add(1)
+                ans.append(CraftState(j[0], j[1], i[1], i[0], facts, j[0], j[1], problem_mood))
 
     return ans
 
@@ -81,24 +85,22 @@ def train(filename, seed):
 
     here = path.dirname(__file__)
     map_fn = path.join(here, "craft/garden.map")
-    map_fn2 = path.join(here, "craft/garden2.map")
 
     rng1 = Random(seed + 1)
-    env1 = Craft(map_fn, rng1, 1, 5, objects=OBJECTS2, problem_mood=problem_mood)
+    env1 = Craft(map_fn, rng1, 1, 5, objects=OBJECTS3, problem_mood=problem_mood)
 
 
     rng2 = Random(seed + 2)
-    env2 = Craft(map_fn, rng2, 4, 1, objects=OBJECTS2, problem_mood=problem_mood)
+    env2 = Craft(map_fn, rng2, 1, 5, objects=OBJECTS3, problem_mood=problem_mood, fence=True)
 
-    rng3 = Random(seed + 3)
-    env3 = Craft(map_fn2, rng3, 5, 2, objects=OBJECTS2, problem_mood=problem_mood)
 
     init1 = create_init(env1.get_all_item(), [[1,5]])
+    init2 = create_init(env1.get_all_item(), [[1,5]], True)
 
 
 
 
-    tasks = [[OBJECTS2["target"]]]
+    tasks = [[OBJECTS3["target"]]]
     not_task = []
     tasks = tasks[START_TASK:END_TASK+1]
 
@@ -106,8 +108,8 @@ def train(filename, seed):
 
         print("ql: begin experiment")
         report1 = SequenceReport(csvfile, LOG_STEP, init1, EPISODE_LENGTH, TRIALS)
-        report2 = SequenceReport(csvfile, LOG_STEP, init1, EPISODE_LENGTH, TRIALS)
-        report3 = SequenceReport(csvfile, LOG_STEP, init1, EPISODE_LENGTH, TRIALS)
+        report2 = SequenceReport(csvfile, LOG_STEP, init2, EPISODE_LENGTH, TRIALS)
+
 
         for j, goal in enumerate(tasks):
             print("ql: begin task {}".format(j + START_TASK))
@@ -119,27 +121,21 @@ def train(filename, seed):
             agent2 = Agent(env2, policy2, reward2, rng2)
 
 
-            rng3.seed(seed + j)
-            policy3 = EpsilonGreedy(alpha=1.0, gamma=1.0, epsilon=0.3,
-                                    default_q=DEFAULT_Q, num_actions=4, rng=rng3)
-            agent3 = Agent(env3, policy3, reward2, rng3)
-
-
             try:
                 start = time()
-                agent2.train(steps=TOTAL_STEPS1,
-                             steps_per_episode=EPISODE_LENGTH, report=report2)
-                agent3.train(steps=TOTAL_STEPS1,
-                             steps_per_episode=EPISODE_LENGTH, report=report3)
+                agent2.train(steps=TOTAL_STEPS1, steps_per_episode=EPISODE_LENGTH, report=report2)
 
-                report1 = SequenceReport(csvfile, LOG_STEP, init1, EPISODE_LENGTH, TRIALS)
+
+                evaluate_agent(env2, policy2, reward2, init2)
+
                 reward1 = ReachFacts(env1, goal, not_task, problem_mood)
-                policy1 = Empathic(alpha=1.0, gamma=1.0, epsilon=0.3,
-                                   default_q=DEFAULT_Q, num_actions=5, rng=rng1, others_q=[policy2.get_Q(), policy3.get_Q()], others_init=[[1,5], [1,5]], others_dist=[0.5, 0.5], penalty=-2*EPISODE_LENGTH, others_alpha=[0.0, 1.0], objects=OBJECTS2, problem_mood = problem_mood, caring_func="sum", restricted=[[], [2, 1]])
+                policy1 = Empathic(alpha=0.3, gamma=1.0, epsilon=0.5,
+                                   default_q=DEFAULT_Q, num_actions=5, rng=rng1, others_q=[policy2.get_Q(), policy2.get_Q()], others_init=[[1,5], [1,5]], others_dist=[0.5, 0.5], penalty=-2*EPISODE_LENGTH, others_alpha=[10.0, 1.0], objects=OBJECTS3, problem_mood = problem_mood, caring_func="sum", restricted=[[2, 1], []])
                 agent1 = Agent(env1, policy1, reward1, rng1)
 
                 agent1.train(steps=TOTAL_STEPS2,
                              steps_per_episode=EPISODE_LENGTH, report=report1)
+                print(policy1.Q)
                 evaluate_agent(env1, policy1, reward1, init1)
 
             except KeyboardInterrupt:
