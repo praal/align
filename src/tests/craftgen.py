@@ -140,7 +140,7 @@ def visualize(foldername, alpha_start, alpha_end, labels=["First Agent", "Second
     plt.ylabel("Average Reward")
     plt.legend(loc='best')
 
-    plt.savefig(os.path.join("../datasets/", foldername, f"seq-fig.png"))
+    plt.savefig(os.path.join("../datasets/", foldername, f"fig.png"))
     plt.show()
 
 def train(filename, seed, foldername, alpha_start, alpha_end):
