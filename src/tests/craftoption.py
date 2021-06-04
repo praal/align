@@ -110,7 +110,6 @@ def train(filename, seed, alpha2):
 
     rng1 = Random(seed + 1)
     env1 = Craft(map_fn, rng1, 7, 7, objects=OBJECTS4, problem_mood=problem_mood)
-    print(env1.get_all_item())
     init1 = create_init([env1.get_all_item()[2]], [[7,7]])
     options = create_options(env1.get_all_item(), [7,7])
     tasks = [[OBJECTS4["target"]]]
