@@ -39,6 +39,20 @@ END_TASK = 3
 logging.basicConfig(level=logging.INFO)
 problem_mood = 4
 
+
+def print_state(state, action):
+    if action == 0:
+        print("Agent Location:", state.x, state.y, "Key Location:", state.key_x, state.key_y, "Action: Down")
+    elif action == 1:
+        print("Agent Location:", state.x, state.y, "Key Location:", state.key_x, state.key_y, "Action: Up")
+    elif action == 2:
+        print("Agent Location:", state.x, state.y, "Key Location:", state.key_x, state.key_y, "Action: Left")
+    elif action == 3:
+        print("Agent Location:", state.x, state.y, "Key Location:", state.key_x, state.key_y, "Action: Right")
+    else:
+        print("Agent Location:", state.x, state.y, "Key Location:", state.key_x, state.key_y)
+
+
 def evaluate_agent(env, policy1, reward1, init):
     print("Evaluation:")
     state_rewards = []
@@ -54,13 +68,13 @@ def evaluate_agent(env, policy1, reward1, init):
             a = policy1.get_best_action(s0)
             env.apply_action(a)
             s1 = env.state
-            print(s0, "----", a, "--->", s1)
+            print_state(s0, a)
             step_reward, finished = reward1(s0, a, s1)
             if not finished:
                 trial_reward += step_reward
             logging.debug("(%s, %s, %s) -> %s", s0, a, s1, step_reward)
             if finished:
-                print("final", s1)
+                print_state(s1, -1)
                 break
 
         state_rewards.append(trial_reward)

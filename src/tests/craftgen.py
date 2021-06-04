@@ -16,7 +16,6 @@ import logging
 from os import path
 from random import Random
 from time import time
-from typing import List, Tuple
 
 from environment import Craft, CraftState
 from environment import ReachFacts
@@ -38,6 +37,7 @@ END_TASK = 3
 logging.basicConfig(level=logging.INFO)
 problem_mood = 1
 
+
 def evaluate_agents(env, policy1, reward1, env2, policy2, reward2, init, init2):
     state_rewards = []
     state_rewards2 = []
@@ -58,13 +58,11 @@ def evaluate_agents(env, policy1, reward1, env2, policy2, reward2, init, init2):
                 a = policy1.get_best_action(s0)
                 env.apply_action(a)
                 s1 = env.state
-                print(s0, "----", a, "--->", s1)
                 step_reward, finished = reward1(s0, a, s1)
                 if not finished:
                     trial_reward += step_reward
                 logging.debug("(%s, %s, %s) -> %s", s0, a, s1, step_reward)
                 if finished:
-                    print("final", s1)
                     break
 
             facts = set()

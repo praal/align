@@ -1,22 +1,14 @@
 import sys  # noqa
-from datetime import datetime
 from os import path as p  # noqa
-import os
-import time
-import numpy as np
-
 
 from rl.qvalue import EpsilonGreedy
 from rl.rl import Agent
-import matplotlib.pyplot as plt
 sys.path.append(p.abspath(p.join(p.dirname(sys.modules[__name__].__file__),
                                  "..")))  # noqa
-import csv
 import logging
 from os import path
 from random import Random
 from time import time
-from typing import List, Tuple
 
 
 from environment import ReachFacts
@@ -39,6 +31,21 @@ END_TASK = 3
 logging.basicConfig(level=logging.INFO)
 problem_mood = 3
 
+def print_state(state, action):
+    if action == 0:
+        print("Agent Location:", state.x, state.y, "Action: Down")
+    elif action == 1:
+        print("Agent Location:", state.x, state.y, "Action: Up")
+    elif action == 2:
+        print("Agent Location:", state.x, state.y,  "Action: Left")
+    elif action == 3:
+        print("Agent Location:", state.x, state.y,  "Action: Right")
+    elif action == 4:
+        print("Agent Location:", state.x, state.y,  "Action: Building Fence")
+    else:
+        print("Agent Location:", state.x, state.y)
+
+
 def evaluate_agent(env, policy1, reward1, init):
     print("Evaluation:")
     state_rewards = []
@@ -54,21 +61,18 @@ def evaluate_agent(env, policy1, reward1, init):
             a = policy1.get_best_action(s0)
             env.apply_action(a)
             s1 = env.state
-            print(s0, "----", a, "--->", s1)
+            print_state(s0, a)
             step_reward, finished = reward1(s0, a, s1)
             if not finished:
                 trial_reward += step_reward
             logging.debug("(%s, %s, %s) -> %s", s0, a, s1, step_reward)
             if finished:
-                print("final", s1)
+                print_state(s1, -1)
                 break
 
         state_rewards.append(trial_reward)
 
-
-
 def create_init(key_locations, init_locations, fence=False):
-    print("@@@@@@@@@@", key_locations)
     ans = []
     for i in key_locations:
         for j in init_locations:
@@ -96,9 +100,6 @@ def train(filename, seed, alpha2):
 
     init1 = create_init(env1.get_all_item(), [[1,5]])
     init2 = create_init(env1.get_all_item(), [[1,5]], True)
-
-
-
 
     tasks = [[OBJECTS3["target"]]]
     not_task = []
