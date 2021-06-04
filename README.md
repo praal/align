@@ -38,4 +38,9 @@ To run this experiment you need to execute the line below. The paramater alpha2 
 ```
 python3 -m tests.craftoption alpha2
 ```
+- **Agents acting simultaneously**
+To run this experiment you need to execute the line below. The paramater alpha2 specifies how much we care about other agents. To reproduce the policies in the paper set alpha2 to 0, 0.5 and 1.5.
 
+```
+python3 -m tests.craftsimul alpha2
+```
