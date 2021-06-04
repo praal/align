@@ -196,7 +196,6 @@ def train(filename, seed, foldername, alpha_start, alpha_end):
 
                     agent2.train(steps=TOTAL_STEPS2,
                             steps_per_episode=EPISODE_LENGTH, report=report2)
-                    print(policy2.Q)
                     test(env2, policy2, reward2, env1, policy1, reward1, init, alpha, foldername)
 
             except KeyboardInterrupt:

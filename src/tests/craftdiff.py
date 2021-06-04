@@ -125,9 +125,6 @@ def train(filename, seed, alpha2):
                 start = time()
                 agent2.train(steps=TOTAL_STEPS1, steps_per_episode=EPISODE_LENGTH, report=report2)
 
-
-                evaluate_agent(env2, policy2, reward2, init2)
-
                 reward1 = ReachFacts(env1, goal, not_task, problem_mood)
                 policy1 = Empathic(alpha=1.0, gamma=1.0, epsilon=0.2,
                                    default_q=DEFAULT_Q, num_actions=5, rng=rng1, others_q=[policy2.get_Q(), policy2.get_Q()], others_init=[[1,5], [1,5]], others_dist=[0.5, 0.5], penalty=-2*EPISODE_LENGTH, others_alpha=[alpha2, 1.0], objects=OBJECTS3, problem_mood = problem_mood, caring_func="sum", restricted=[[2, 1], []])
