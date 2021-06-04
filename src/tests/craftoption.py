@@ -28,7 +28,7 @@ from rl.empathic_policy import Empathic
 DEFAULT_Q = -1000.0
 
 TOTAL_STEPS1 = 100000
-TOTAL_STEPS2 = 300000
+TOTAL_STEPS2 = 200000
 
 EPISODE_LENGTH = 1000
 TEST_EPISODE_LENGTH = 50
@@ -89,7 +89,7 @@ def create_options(key_locations, init_location):
             options.append(ans)
     return options
 
-def train(filename, seed):
+def train(filename, seed, alpha2):
 
     here = path.dirname(__file__)
     map_fn = path.join(here, "craft/options.map")
@@ -114,7 +114,7 @@ def train(filename, seed):
                 report1 = SequenceReport(csvfile, LOG_STEP, init1, EPISODE_LENGTH, TRIALS)
                 reward1 = ReachFacts(env1, goal, not_task, problem_mood)
                 policy1 = Empathic(alpha=1.0, gamma=1.0, epsilon=0.2,
-                                    default_q=DEFAULT_Q, num_actions=4, rng=rng1, others_q=[], others_init=[[7,7], [7,7], [7,7], [7,7], [7,7]], others_dist=[0.2, 0.2, 0.2, 0.2, 0.2], penalty=-2*EPISODE_LENGTH, others_alpha=[50.0], objects=OBJECTS4, problem_mood = problem_mood, options = options)
+                                    default_q=DEFAULT_Q, num_actions=4, rng=rng1, others_q=[], others_init=[[7,7], [7,7], [7,7], [7,7], [7,7]], others_dist=[0.2, 0.2, 0.2, 0.2, 0.2], penalty=-2*EPISODE_LENGTH, others_alpha=[alpha2], objects=OBJECTS4, problem_mood = problem_mood, options = options)
                 agent1 = Agent(env1, policy1, reward1, rng1)
 
                 agent1.train(steps=TOTAL_STEPS2,
@@ -128,5 +128,11 @@ def train(filename, seed):
 
 
 
-train("./test.csv", 2019)
+start = time()
+alpha2= float(sys.argv[1])
+train("./test.csv", 2019, alpha2)
+end = time()
+print("Total Time:", end - start)
+
+
 

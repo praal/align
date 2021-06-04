@@ -190,7 +190,6 @@ class Craft(Environment[CraftState]):
     num_actions = 4
 
     def __init__(self, map_fn: str, rng: Random, default_x, default_y, objects, problem_mood, tool_in_fact = False, wood_in_fact = False, fence = False, noise = 0.0):
-        print("###########", problem_mood)
         self.problem_mood = problem_mood
         self.map_data = load_map(map_fn)
         self.height = len(self.map_data)

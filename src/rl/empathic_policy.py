@@ -123,9 +123,9 @@ class Empathic(Policy):
         ans = 0
         first = True
         for other in range(len(self.others_q)):
-            if state.key_x == -1:
-                ans += self.others_dist[other] * self.penalty
-                continue
+          #  if state.key_x == -1:
+            #    ans += self.others_dist[other] * self.others_alpha[other] * self.penalty
+            #    continue
             fact_list = [False] * len(self.objects)
             if "extra" in self.objects and state.facts[OBJECTS1["extra"]]:
                 fact_list[4] = True
@@ -167,7 +167,6 @@ class Empathic(Policy):
         q = (1.0 - self.alpha) * self.Q.get((s0.uid, a), self.default_q)[0]
         if end:
             others = self.estimate_other(s1, s0)
-
             q += self.alpha * (self.our_alpha * r + self.gamma * others)
 
 

@@ -26,8 +26,8 @@ from environment.craft import OBJECTS1, update_facts
 
 DEFAULT_Q = -1000.0
 
-TOTAL_STEPS1 = 1000000
-TOTAL_STEPS2 = 1500000
+TOTAL_STEPS1 = 400000
+TOTAL_STEPS2 = 700000
 
 EPISODE_LENGTH = 1000
 TEST_EPISODE_LENGTH = 50
@@ -118,7 +118,6 @@ def visualize(foldername, alpha_start, alpha_end, labels=["First Agent", "Second
     for i in range(len(labels)):
         results.append([])
     for a in range(alpha_start, alpha_end):
-
         alpha.append(a)
         x.append(a/100.0)
         with open(os.path.join("../datasets/", foldername, f"seq_{a}.csv")) as alpha_file:
@@ -130,7 +129,6 @@ def visualize(foldername, alpha_start, alpha_end, labels=["First Agent", "Second
                     tmp.append(float(r))
                 results[i].append(tmp)
                 i += 1
-
 
     for i in range(len(results)):
         means = np.mean(results[i], axis=1)
@@ -172,7 +170,7 @@ def train(filename, seed, foldername, alpha_start, alpha_end):
             rng1.seed(seed + j)
 
             reward1 = ReachFacts(env1, goal, not_task, problem_mood)
-            policy1 = EpsilonGreedy(alpha=1.0, gamma=1.0, epsilon=0.3,
+            policy1 = EpsilonGreedy(alpha=1.0, gamma=1.0, epsilon=0.5,
                                    default_q=DEFAULT_Q, num_actions=4, rng=rng1)
             agent = Agent(env1, policy1, reward1, rng1)
 
@@ -192,13 +190,13 @@ def train(filename, seed, foldername, alpha_start, alpha_end):
                     init2 = create_init(env2.get_all_item(), [[1,1]])
                     report2 = SequenceReport(csvfile, LOG_STEP, init2, EPISODE_LENGTH, TRIALS)
                     reward2 = ReachFacts(env2, goal, not_task, problem_mood)
-                    policy2 = Empathic(alpha=1.0, gamma=1.0, epsilon=0.3,
+                    policy2 = Empathic(alpha=1.0, gamma=1.0, epsilon=0.5,
                                default_q=DEFAULT_Q, num_actions=5, rng=rng2, others_q=[policy1.get_Q()], penalty=-2*EPISODE_LENGTH, others_alpha=[alpha / 100.0], objects=OBJECTS1, problem_mood=problem_mood)
                     agent2 = Agent(env2, policy2, reward2, rng2)
 
                     agent2.train(steps=TOTAL_STEPS2,
                             steps_per_episode=EPISODE_LENGTH, report=report2)
-
+                    print(policy2.Q)
                     test(env2, policy2, reward2, env1, policy1, reward1, init, alpha, foldername)
 
             except KeyboardInterrupt:
@@ -224,13 +222,16 @@ def test(env1, policy1, reward1, env2, policy2, reward2, init, alpha, foldername
         writer.writerow(selfish_reward)
         writer.writerow(all_reward)
 
-alpha_start = 0
-alpha_end = 10
-#alpha_start = int(sys.argv[1])
-#alpha_end = int(sys.argv[2])
-#print("start", alpha_start, alpha_end)
-folder_name = datetime.now().strftime("%d%m%Y_%H%M%S")
-#folder_name = "results-det"
+
+start = time()
+folder_name = sys.argv[1]
+alpha_start = int(sys.argv[2])
+alpha_end = int(sys.argv[3])
+print("start", alpha_start, alpha_end)
+#folder_name = datetime.now().strftime("%d%m%Y_%H%M%S")
+#folder_name = "results-det-3"
 os.makedirs(os.path.join("../datasets/", folder_name))
-train("./test.csv", 2019, folder_name, alpha_start, alpha_end)
+train("./test.csv", 1, folder_name, alpha_start, alpha_end)
 visualize(folder_name,alpha_start, alpha_end)
+end = time()
+print("Total Time:", end - start)

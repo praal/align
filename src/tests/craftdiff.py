@@ -81,7 +81,7 @@ def create_init(key_locations, init_locations, fence=False):
     return ans
 
 
-def train(filename, seed):
+def train(filename, seed, alpha2):
 
     here = path.dirname(__file__)
     map_fn = path.join(here, "craft/garden.map")
@@ -116,7 +116,7 @@ def train(filename, seed):
             rng2.seed(seed + j)
 
             reward2 = ReachFacts(env2, goal, [], problem_mood)
-            policy2 = EpsilonGreedy(alpha=1.0, gamma=1.0, epsilon=0.3,
+            policy2 = EpsilonGreedy(alpha=1.0, gamma=1.0, epsilon=0.2,
                                     default_q=DEFAULT_Q, num_actions=4, rng=rng2)
             agent2 = Agent(env2, policy2, reward2, rng2)
 
@@ -129,8 +129,8 @@ def train(filename, seed):
                 evaluate_agent(env2, policy2, reward2, init2)
 
                 reward1 = ReachFacts(env1, goal, not_task, problem_mood)
-                policy1 = Empathic(alpha=0.3, gamma=1.0, epsilon=0.5,
-                                   default_q=DEFAULT_Q, num_actions=5, rng=rng1, others_q=[policy2.get_Q(), policy2.get_Q()], others_init=[[1,5], [1,5]], others_dist=[0.5, 0.5], penalty=-2*EPISODE_LENGTH, others_alpha=[10.0, 1.0], objects=OBJECTS3, problem_mood = problem_mood, caring_func="sum", restricted=[[2, 1], []])
+                policy1 = Empathic(alpha=1.0, gamma=1.0, epsilon=0.2,
+                                   default_q=DEFAULT_Q, num_actions=5, rng=rng1, others_q=[policy2.get_Q(), policy2.get_Q()], others_init=[[1,5], [1,5]], others_dist=[0.5, 0.5], penalty=-2*EPISODE_LENGTH, others_alpha=[alpha2, 1.0], objects=OBJECTS3, problem_mood = problem_mood, caring_func="sum", restricted=[[2, 1], []])
                 agent1 = Agent(env1, policy1, reward1, rng1)
 
                 agent1.train(steps=TOTAL_STEPS2,
@@ -144,5 +144,11 @@ def train(filename, seed):
 
 
 
-train("./test.csv", 2019)
+start = time()
+alpha2 = float(sys.argv[1])
+train("./test.csv", 2019, alpha2)
+end = time()
+print("Total Time:", end - start)
+
+
 
