@@ -228,7 +228,7 @@ print("start", alpha_start, alpha_end)
 #folder_name = datetime.now().strftime("%d%m%Y_%H%M%S")
 #folder_name = "results-det-3"
 os.makedirs(os.path.join("../datasets/", folder_name))
-train("./test.csv", 1, folder_name, alpha_start, alpha_end)
+train("./test.csv", 2019, folder_name, alpha_start, alpha_end)
 visualize(folder_name,alpha_start, alpha_end)
 end = time()
 print("Total Time:", end - start)
