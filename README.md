@@ -14,7 +14,7 @@ To run the code, first move to the *src* folder. There are multiple scripts to r
 
 
 - **Effect of Caring Coefficient (Figure 1)** 
-To run this experiment you need to execute the line below. foldername specifies the name of folder to store data that is needed to draw the plot, the folder will be created at *datasets* folder. The parameters of alpha_start and alpha_end specify the range of caring coefficient. In the plot of the paper, we set alpha2_start to 0 and alpha2_end to 700. 
+To run this experiment you need to execute the line below. foldername specifies the name of folder to store data that is needed to draw the plot, the folder will be created at *datasets* folder, and the plot will be stored at *fig.png* at the specified folder. The parameters of alpha_start and alpha_end specify the range of caring coefficient. In the plot of the paper, we set alpha2_start to 0 and alpha2_end to 700. 
 
 ```
 python3 -m tests.craftgen foldername alpha2_start alpha2_end 
