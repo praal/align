@@ -95,10 +95,16 @@ class EpsilonGreedy(Greedy):
         super().__init__(alpha, gamma, default_q, num_actions, rng)
 
     def get_train_action(self, state: State,
-                         restrict: Optional[List[int]] = None) -> ActionId:
+                         restrict: Optional[List[int]] = None, restrict_locations = [[3, 1], [1, 3]]) -> ActionId:
         if self.rng.random() < self.epsilon:
             if restrict is None:
-                restrict = list(range(self.num_actions))
+                if self.num_actions == 5:
+                    restrict = list(range(self.num_actions - 1))
+                    for i in range(len(restrict_locations)):
+                        if state.x == restrict_locations[i][0] and state.y == restrict_locations[i][1]:
+                            restrict = list(range(self.num_actions))
+                else:
+                    restrict = list(range(self.num_actions))
             return self.rng.choice(restrict)
         else:
             return self.get_best_action(state, restrict)

@@ -221,9 +221,9 @@ def test(env1, policy1, reward1, env2, policy2, reward2, init, alpha, foldername
 
 
 start = time()
-folder_name = sys.argv[1]
-alpha_start = int(sys.argv[2])
-alpha_end = int(sys.argv[3])
+folder_name = "res3"
+alpha_start = 600
+alpha_end = 700
 print("start", alpha_start, alpha_end)
 #folder_name = datetime.now().strftime("%d%m%Y_%H%M%S")
 #folder_name = "results-det-3"
