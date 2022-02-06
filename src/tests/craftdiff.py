@@ -1,3 +1,23 @@
+#Copyright (c) 2022 Be Considerate: Avoiding Negative Side Effects
+#in Reinforcement Learning Authors
+
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 import sys  # noqa
 from os import path as p  # noqa
 
@@ -30,6 +50,7 @@ START_TASK = 0
 END_TASK = 3
 logging.basicConfig(level=logging.INFO)
 problem_mood = 3
+
 
 def print_state(state, action):
     if action == 0:
@@ -72,6 +93,7 @@ def evaluate_agent(env, policy1, reward1, init):
 
         state_rewards.append(trial_reward)
 
+
 def create_init(key_locations, init_locations, fence=False):
     ans = []
     for i in key_locations:
@@ -110,7 +132,6 @@ def train(filename, seed, alpha2):
         print("ql: begin experiment")
         report1 = SequenceReport(csvfile, LOG_STEP, init1, EPISODE_LENGTH, TRIALS)
         report2 = SequenceReport(csvfile, LOG_STEP, init2, EPISODE_LENGTH, TRIALS)
-
 
         for j, goal in enumerate(tasks):
             print("ql: begin task {}".format(j + START_TASK))

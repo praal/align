@@ -1,3 +1,23 @@
+#Copyright (c) 2022 Be Considerate: Avoiding Negative Side Effects
+#in Reinforcement Learning Authors
+
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 import logging
 from random import Random
 from typing import FrozenSet, List, Mapping, Optional, Sequence, Set, Tuple
@@ -24,6 +44,7 @@ OBJECTS2 = dict([(v, k) for k, v in enumerate(
 OBJECTS3 = dict([(v, k) for k, v in enumerate(["target", "fence"])])
 
 OBJECTS4 = dict([(v, k) for k, v in enumerate(["key", "target"])])
+
 
 def update_facts(problem_mood,facts: Sequence[bool], objects: Observation, is_key,tool_in_fac=False, wood_in_fac = False, put_extra=False):
     state = set([i for i, v in enumerate(facts) if v])
@@ -94,7 +115,6 @@ def update_facts(problem_mood,facts: Sequence[bool], objects: Observation, is_ke
         elif "factory" in objects and OBJECTS4["key"] in state:
             state.add(OBJECTS4["target"])
         return state, key_change
-
 
 
 class CraftState(State):
@@ -205,7 +225,6 @@ class Craft(Environment[CraftState]):
         self.fence = fence
         super().__init__(CraftState.random(self.problem_mood, self.rng, self.map_data, self.key_locations, default_x, default_y, self.tool_in_fact_default, self.wood_in_fact_default, self.fence))
 
-
     def get_all_item(self, item="key"):
         ans = []
         for y in range(self.height):
@@ -215,7 +234,6 @@ class Craft(Environment[CraftState]):
         return ans
 
     def apply_action(self, a: ActionId):
-
         if self.rng.random() < self.noise:
             a = self.rng.randrange(self.num_actions)
 
@@ -237,7 +255,6 @@ class Craft(Environment[CraftState]):
         if a == 4:
             put_extra = True
         new_facts, key_change = update_facts(self.problem_mood, self.state.facts, objects, is_key, False, False, put_extra)
-
 
         new_key_x = self.state.key_x
         new_key_y = self.state.key_y
@@ -262,8 +279,6 @@ class Craft(Environment[CraftState]):
             return 12.0
         if "fence" in self.objects and not s0.facts[self.objects["fence"]] and s1.facts[self.objects["fence"]] and a == 4:
             return 50.0
-       # if self.problem_mood == 2:
-       #     return 0
         return 1.0
 
     def observe(self, state: CraftState) -> Observation:

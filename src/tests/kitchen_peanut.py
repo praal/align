@@ -1,14 +1,29 @@
+#Copyright (c) 2022 Be Considerate: Avoiding Negative Side Effects
+#in Reinforcement Learning Authors
+
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 import sys  # noqa
-from datetime import datetime
 from os import path as p  # noqa
-import os
-import time
-import numpy as np
 
 
 from rl.qvalue import EpsilonGreedy
 from rl.rl import Agent
-import matplotlib.pyplot as plt
 sys.path.append(p.abspath(p.join(p.dirname(sys.modules[__name__].__file__),
                                  "..")))  # noqa
 import csv
@@ -39,7 +54,6 @@ END_TASK = 3
 logging.basicConfig(level=logging.INFO)
 
 
-
 def print_state(state, action):
     if action == 0:
         print("Agent Location:", state.x, state.y, "Action: Down")
@@ -53,7 +67,6 @@ def print_state(state, action):
         print("Agent Location:", state.x, state.y,  "Action: Clean")
     else:
         print("Agent Location:", state.x, state.y)
-
 
 
 def evaluate_agent(env, policy1, reward1, init):
@@ -197,7 +210,7 @@ def train(filename, seed):
 
                 report1 = SequenceReport(csvfile, LOG_STEP, init1, EPISODE_LENGTH, TRIALS)
                 reward1 = ReachFacts(env1, goal, not_task)
-             #   print(policy2.Q)
+
                 policy1 = BaseEmpathic(alpha=1.0, gamma=1.0, epsilon=0.2,
                                        default_q=DEFAULT_Q, num_actions=5, rng=rng1, others_q=[policy2.get_Q()], others_init=[[1,1]], others_dist=[1.0], penalty=-2*EPISODE_LENGTH, others_alpha=[1.0], objects=OBJECTS2, problem_mood=problem_mood)
                 agent1 = Agent(env1, policy1, reward1, rng1)
@@ -236,7 +249,6 @@ def train(filename, seed):
 
                 logging.warning("ql: interrupted task %s after %s seconds!",
                                 j + START_TASK, end - start)
-
 
 
 start = time()

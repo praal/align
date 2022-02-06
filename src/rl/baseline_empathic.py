@@ -1,3 +1,23 @@
+#Copyright (c) 2022 Be Considerate: Avoiding Negative Side Effects
+#in Reinforcement Learning Authors
+
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 from random import Random
 from typing import Dict, Hashable, List, Optional, Tuple
 
@@ -58,6 +78,7 @@ class BaseEmpathic(Policy):
         if len(best_actions) > 1 and best_actions[0] == 4 and best_actions[1] == 5:
             return 4
         return self.rng.choice(best_actions)
+
     def get_policy(self):
         ans = {}
         for state,_ in self.Q:
@@ -93,7 +114,6 @@ class BaseEmpathic(Policy):
             print("zero!", uid)
         return max_q[0]
 
-
     def estimate_other(self, state, prev_state):
         ans = 0
         for other in range(len(self.others_q)):
@@ -112,11 +132,8 @@ class BaseEmpathic(Policy):
             if self.problem_mood == 4 and state.facts[self.objects["up"]]:
                 fact_list[4] = True
 
-
-
             facts = tuple(fact_list)
             uid = (self.others_init[other][0], self.others_init[other][1], facts)
-
 
             max_q = self.get_max_q(uid, self.others_q[other])
 

@@ -1,3 +1,23 @@
+#Copyright (c) 2022 Be Considerate: Avoiding Negative Side Effects
+#in Reinforcement Learning Authors
+
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 import logging
 from random import Random
 from typing import FrozenSet, List, Mapping, Optional, Sequence, Set, Tuple
@@ -17,7 +37,6 @@ ACTIONS: List[Tuple[int, int]] = [
 OBJECTS1 = dict([(v, k) for k, v in enumerate(
     ["fridge", "oven", "food", "fridge_open_now", "fridge_open_prev"])])
 
-
 OBJECTS2 = dict([(v, k) for k, v in enumerate(
     ["fridge", "oven", "food", "dirty", "very_dirty"])])
 
@@ -26,6 +45,7 @@ OBJECTS3 = dict([(v, k) for k, v in enumerate(
 
 OBJECTS4 = dict([(v, k) for k, v in enumerate(
     ["fridge",  "open_prev", "food", "open", "up" ])])
+
 
 def update_facts(problem_mood, facts: Sequence[bool], objects: Observation, allergic = False, extra_move=False, baking = False, down=False, short=False):
     state = set([i for i, v in enumerate(facts) if v])
@@ -92,10 +112,8 @@ def update_facts(problem_mood, facts: Sequence[bool], objects: Observation, alle
                 if extra_move:
                     state.remove(OBJECTS4["open"])
                     state.add(OBJECTS4["up"])
-                    #print("!!!!!!!!!!")
                 if down:
                     state.remove(OBJECTS4["up"])
-                   # print("!!!!!!!!!!!!!!!!!!!")
 
             elif o == "oven" and OBJECTS4["fridge"] in state and OBJECTS4["open_prev"] not in state:
                 state.add(OBJECTS4["food"])
@@ -211,7 +229,6 @@ class Kitchen(Environment[KitchenState]):
         return ans
 
     def apply_action(self, a: ActionId):
-
         if self.rng.random() < self.noise:
             a = self.rng.randrange(self.num_actions)
 
@@ -226,14 +243,11 @@ class Kitchen(Environment[KitchenState]):
         put_down = False
         if a >= 4:
             extra_move = True
-            #print("******!!!!", self.state.uid, a)
             if a >= 5:
                 put_down = True
         new_facts = update_facts(self.problem_mood, self.state.facts, objects, allergic=self.allergic, extra_move=extra_move, baking = self.baking, down=put_down, short=self.short)
 
         self.state = KitchenState(x, y, new_facts, self.default_x, self.default_y)
-       # if extra_move:
-            #print("########", self.state.uid)
         logging.debug("success, current state is %s", self.state)
 
     def cost(self, s0: KitchenState, a: ActionId, s1: KitchenState) -> float:

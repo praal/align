@@ -1,22 +1,15 @@
 import sys  # noqa
-from datetime import datetime
 from os import path as p  # noqa
-import os
-import time
-import numpy as np
 
 
 from rl.qvalue import EpsilonGreedy
 from rl.rl import Agent
-import matplotlib.pyplot as plt
 sys.path.append(p.abspath(p.join(p.dirname(sys.modules[__name__].__file__),
                                  "..")))  # noqa
-import csv
 import logging
 from os import path
 from random import Random
 from time import time
-from typing import List, Tuple
 
 
 from environment import ReachFacts
@@ -52,7 +45,6 @@ def print_state(state, action):
         print("Agent Location:", state.x, state.y,  "Action: Heat", state.facts)
     else:
         print("Agent Location:", state.x, state.y)
-
 
 
 def evaluate_agent(env, policy1, reward1, init):
@@ -237,7 +229,6 @@ def train(filename, seed):
 
                 logging.warning("ql: interrupted task %s after %s seconds!",
                                 j + START_TASK, end - start)
-
 
 
 start = time()

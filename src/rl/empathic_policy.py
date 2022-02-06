@@ -1,9 +1,30 @@
+#Copyright (c) 2022 Be Considerate: Avoiding Negative Side Effects
+#in Reinforcement Learning Authors
+
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 from random import Random
 from typing import Dict, Hashable, List, Optional, Tuple
 
 from environment import ActionId, State
 from environment.craft import OBJECTS1
 from .rl import Policy
+
 
 class Empathic(Policy):
     alpha: float
@@ -35,7 +56,6 @@ class Empathic(Policy):
         self.default_key_y = 3
         self.restricted = restricted
         self.options = options
-
 
     def clear(self):
         self.Q = {}
@@ -123,9 +143,6 @@ class Empathic(Policy):
         ans = 0
         first = True
         for other in range(len(self.others_q)):
-          #  if state.key_x == -1:
-            #    ans += self.others_dist[other] * self.others_alpha[other] * self.penalty
-            #    continue
             fact_list = [False] * len(self.objects)
             if "extra" in self.objects and state.facts[OBJECTS1["extra"]]:
                 fact_list[4] = True
@@ -148,7 +165,6 @@ class Empathic(Policy):
                 else:
                     ans = min(ans, self.others_alpha[other] * max_q)
 
-                #print(uid, "!", state, "****", max_q, "!!!!!", self.others_alpha[other] * max_q, "!<", ans)
             elif self.caring_func == "neg":
                 uid2 = (self.others_init[other][0], self.others_init[other][1], self.default_key_x, self.default_key_y, facts)
                 max_q2 = self.get_max_q(uid2, self.others_q[other])
@@ -172,8 +188,6 @@ class Empathic(Policy):
         if end:
             others = self.estimate_other(s1, s0)
             q += self.alpha * (self.our_alpha * r + self.gamma * others)
-
-
         else:
             q += self.alpha * (self.our_alpha * r + self.gamma * (self.estimate(s1)))
 
