@@ -262,6 +262,8 @@ class Craft(Environment[CraftState]):
             return 12.0
         if "fence" in self.objects and not s0.facts[self.objects["fence"]] and s1.facts[self.objects["fence"]] and a == 4:
             return 50.0
+       # if self.problem_mood == 2:
+       #     return 0
         return 1.0
 
     def observe(self, state: CraftState) -> Observation:

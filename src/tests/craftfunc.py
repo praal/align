@@ -25,13 +25,13 @@ from utils.report import SequenceReport
 from rl.empathic_policy import Empathic
 
 
-DEFAULT_Q = -1000.0
+DEFAULT_Q = -10000.0
 
 TOTAL_STEPS1 = 100000
 TOTAL_STEPS2 = 200000
 
 EPISODE_LENGTH = 1000
-TEST_EPISODE_LENGTH = 50
+TEST_EPISODE_LENGTH = 100
 LOG_STEP = 10000
 TRIALS = 5
 START_TASK = 0
@@ -110,11 +110,18 @@ def train(filename, seed, emp_func):
     rng4 = Random(seed + 4)
     env4 = Craft(map_fn, rng4, 1, 3, objects=OBJECTS2, problem_mood=problem_mood)
 
+    rng5 = Random(seed + 5)
+    env5 = Craft(map_fn, rng5, 1, 5, objects=OBJECTS2, problem_mood=problem_mood)
+
+    rng6 = Random(seed + 6)
+    env6 = Craft(map_fn, rng6, 1, 5, objects=OBJECTS2, problem_mood=problem_mood)
+
     init1 = create_init([env1.get_all_item()[1]], [[1,5]])
     init2 = create_init(env2.get_all_item(), [[4,1]])
     init3 = create_init(env3.get_all_item(), [[5,2]])
     init4 = create_init(env4.get_all_item(), [[1,3]])
-
+    init5 = create_init([env5.get_all_item()[1]], [[1,5]])
+    init6 = create_init([env5.get_all_item()[1]], [[1,5]])
 
     tasks = [[OBJECTS2["played"]]]
     not_task = [OBJECTS2["doll"]]
@@ -127,6 +134,8 @@ def train(filename, seed, emp_func):
         report2 = SequenceReport(csvfile, LOG_STEP, init2, EPISODE_LENGTH, TRIALS)
         report3 = SequenceReport(csvfile, LOG_STEP, init3, EPISODE_LENGTH, TRIALS)
         report4 = SequenceReport(csvfile, LOG_STEP, init4, EPISODE_LENGTH, TRIALS)
+        report5 = SequenceReport(csvfile, LOG_STEP, init5, EPISODE_LENGTH, TRIALS)
+        report6 = SequenceReport(csvfile, LOG_STEP, init6, EPISODE_LENGTH, TRIALS)
 
         for j, goal in enumerate(tasks):
             print("ql: begin task {}".format(j + START_TASK))
@@ -139,14 +148,23 @@ def train(filename, seed, emp_func):
 
 
             rng3.seed(seed + j)
+            reward3 = ReachFacts(env3, goal, [], problem_mood)
             policy3 = EpsilonGreedy(alpha=1.0, gamma=1.0, epsilon=0.2,
                                 default_q=DEFAULT_Q, num_actions=4, rng=rng3)
-            agent3 = Agent(env3, policy3, reward2, rng3)
+            agent3 = Agent(env3, policy3, reward3, rng3)
 
             rng4.seed(seed + j)
+            reward4 = ReachFacts(env4, goal, [], problem_mood)
             policy4 = EpsilonGreedy(alpha=1.0, gamma=1.0, epsilon=0.2,
                                     default_q=DEFAULT_Q, num_actions=4, rng=rng4)
-            agent4 = Agent(env4, policy4, reward2, rng4)
+            agent4 = Agent(env4, policy4, reward4, rng4)
+
+            rng6.seed(seed + j)
+            reward6 = ReachFacts(env6, goal, [], problem_mood)
+            policy6 = EpsilonGreedy(alpha=1.0, gamma=1.0, epsilon=0.2,
+                                     default_q=DEFAULT_Q, num_actions=4, rng=rng6)
+            agent6 = Agent(env6, policy6, reward6, rng6)
+
 
             try:
 
@@ -158,15 +176,34 @@ def train(filename, seed, emp_func):
                 agent4.train(steps=TOTAL_STEPS1,
                              steps_per_episode=EPISODE_LENGTH, report=report4)
 
+                agent6.train(steps=TOTAL_STEPS1,
+                                steps_per_episode=EPISODE_LENGTH, report=report6)
+
                 report1 = SequenceReport(csvfile, LOG_STEP, init1, EPISODE_LENGTH, TRIALS)
                 reward1 = ReachFacts(env1, goal, not_task, problem_mood)
                 policy1 = Empathic(alpha=1.0, gamma=1.0, epsilon=0.2,
-                                    default_q=DEFAULT_Q, num_actions=5, rng=rng1, others_q=[policy2.get_Q(), policy2.get_Q(), policy3.get_Q(), policy3.get_Q(), policy4.get_Q()], others_init=[[4,1], [4, 1], [5, 2], [5, 2], [1, 3]], others_dist=[0.2, 0.2, 0.2, 0.2, 0.2], penalty=-2*EPISODE_LENGTH, others_alpha=[10.0, 10.0, 10.0, 10.0, 10.0], objects=OBJECTS2, problem_mood = problem_mood, caring_func=emp_func)
+                                    default_q=DEFAULT_Q, num_actions=5, rng=rng1, others_q=[policy2.get_Q(), policy2.get_Q(), policy3.get_Q(), policy3.get_Q(), policy4.get_Q()], others_init=[[4,1], [4, 1], [5, 2], [5, 2], [1, 3]], others_dist=[0.2, 0.2, 0.2, 0.2, 0.2], penalty=-2*EPISODE_LENGTH, others_alpha=[5.0, 5.0, 5.0, 5.0, 5.0], objects=OBJECTS2, problem_mood = problem_mood, caring_func=emp_func)
                 agent1 = Agent(env1, policy1, reward1, rng1)
 
                 agent1.train(steps=TOTAL_STEPS2,
                               steps_per_episode=EPISODE_LENGTH, report=report1)
-                evaluate_agent(env1, policy1, reward1, init1)
+
+                reward5 = ReachFacts(env5, goal, not_task, problem_mood)
+                policy5 = Empathic(alpha=1.0, gamma=1.0, epsilon=0.2,
+                                    default_q=DEFAULT_Q, num_actions=5, rng=rng5, others_q=[policy6.get_Q()], others_init=[ [1, 5]], others_dist=[1.0], penalty=-2*EPISODE_LENGTH, others_alpha=[5.0], objects=OBJECTS2, problem_mood = problem_mood)
+                agent5 = Agent(env5, policy5, reward5, rng5)
+
+
+                if emp_func == "baseline":
+                    agent5.train(steps=TOTAL_STEPS2, steps_per_episode=EPISODE_LENGTH, report=report5)
+                    evaluate_agent(env5, policy5, reward5, init5)
+
+                elif emp_func == "nonaug":
+                    evaluate_agent(env6, policy6, reward6, init6)
+                else:
+                    evaluate_agent(env1, policy1, reward1, init1)
+
+
 
             except KeyboardInterrupt:
 
@@ -175,7 +212,9 @@ def train(filename, seed, emp_func):
 
 
 
-emp_func = sys.argv[1]
+
+#emp_func = sys.argv[1]
+emp_func = "sum"
 start = time()
 train("./test.csv", 2019, emp_func)
 end = time()

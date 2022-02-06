@@ -143,10 +143,12 @@ class Empathic(Policy):
 
             elif self.caring_func == "min":
                 if first:
-                    ans = max_q
+                    ans = self.others_alpha[other] * max_q
                     first = False
                 else:
                     ans = min(ans, self.others_alpha[other] * max_q)
+
+                #print(uid, "!", state, "****", max_q, "!!!!!", self.others_alpha[other] * max_q, "!<", ans)
             elif self.caring_func == "neg":
                 uid2 = (self.others_init[other][0], self.others_init[other][1], self.default_key_x, self.default_key_y, facts)
                 max_q2 = self.get_max_q(uid2, self.others_q[other])

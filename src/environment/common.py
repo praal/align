@@ -28,7 +28,14 @@ class ReachFacts(RewardFn):
             if s1.facts[fact]:
                 return -cost, False
 
-        if s1.x == self.environment.width - 2 and s1.y == self.environment.height - 2:
+        if self.environment.problem_mood == 2:
+            if s1.x == self.environment.default_x and s1.y == self.environment.default_y:
+                return -cost, True
+            return -cost, False
+
+        elif s1.x == self.environment.width - 2 and s1.y == self.environment.height - 2:
+            if cost == 0.0:
+                return 1.0, True
             return -cost, True
         return -cost, False
 
