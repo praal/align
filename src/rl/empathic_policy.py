@@ -154,8 +154,10 @@ class Empathic(Policy):
                 max_q2 = self.get_max_q(uid2, self.others_q[other])
                 ans += self.others_alpha[other] * self.others_dist[other] * min(max_q2, max_q)
 
+            elif self.caring_func == "baseline":
+                ans += self.others_dist[other] * self.others_alpha[other] * max_q
             else:
-                print("Error!")
+                return 0
 
             if self.problem_mood == 3 and len(self.restricted[other]) > 0:
                 if prev_state.x == self.restricted[other][0] and prev_state.y == self.restricted[other][1]:

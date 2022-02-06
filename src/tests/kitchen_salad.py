@@ -37,7 +37,7 @@ TRIALS = 5
 START_TASK = 0
 END_TASK = 3
 logging.basicConfig(level=logging.INFO)
-problem_mood = 2
+
 
 
 def print_state(state, action):
@@ -200,15 +200,15 @@ def train(filename, seed):
                 print("-----------------")
                 print("Baseline 1, Q-learning")
                 step2 = evaluate_second_agent(env2, policy2, reward2, env2, policy2, reward2)
-                print("Total Reward Comnpared to Base = ", -1 * (step2[0] - base_step), -1 * (step2[1] - base_step))
+                print("Total Reward Compared to Base = ", -1 * (step2[0] - base_step), -1 * (step2[1] - base_step))
                 print("-----------------")
                 print("Baseline 2, Krakovna et al")
                 step1 = evaluate_second_agent(env1, policy1, reward1, env2, policy2, reward2)
-                print("Total Reward Comnpared to Base= ", -1 * (step1[0] - base_step), -1 * (step1[1] - base_step))
+                print("Total Reward Compared to Base= ", -1 * (step1[0] - base_step), -1 * (step1[1] - base_step))
                 print("-----------------")
                 print("Our Approach")
                 step3 = evaluate_second_agent(env3, policy3, reward3, env2, policy2, reward2)
-                print("Total Reward Comnpared to Base= ", -1 * (step3[0] - base_step), -1 * (step3[1] - base_step))
+                print("Total Reward Compared to Base= ", -1 * (step3[0] - base_step), -1 * (step3[1] - base_step))
                 print("-----------------")
             except KeyboardInterrupt:
 

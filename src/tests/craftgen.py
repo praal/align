@@ -128,10 +128,12 @@ def visualize(foldername, alpha_start, alpha_end, labels=["First Agent", "Second
                 results[i].append(tmp)
                 i += 1
 
+    linestyles = ['-', '--', ':']
+    linewidths=[1, 1.5, 2]
     for i in range(len(results)):
         means = np.mean(results[i], axis=1)
         std = np.std(results[i], axis=1)
-        plt.plot(x, means, label=labels[i])
+        plt.plot(x, means, label=labels[i], linestyle=linestyles[i], linewidth=linewidths[i])
         ci = 1.96 * std / np.sqrt(num_exp)
         plt.fill_between(x, (means - ci), (means + ci), alpha=.1)
 
@@ -221,12 +223,10 @@ def test(env1, policy1, reward1, env2, policy2, reward2, init, alpha, foldername
 
 
 start = time()
-folder_name = "res3"
-alpha_start = 600
-alpha_end = 700
+folder_name = sys.argv[1]
+alpha_start = int(sys.argv[2])
+alpha_end = int(sys.argv[3])
 print("start", alpha_start, alpha_end)
-#folder_name = datetime.now().strftime("%d%m%Y_%H%M%S")
-#folder_name = "results-det-3"
 os.makedirs(os.path.join("../datasets/", folder_name))
 train("./test.csv", 2019, folder_name, alpha_start, alpha_end)
 visualize(folder_name,alpha_start, alpha_end)

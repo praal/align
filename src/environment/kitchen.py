@@ -82,9 +82,12 @@ def update_facts(problem_mood, facts: Sequence[bool], objects: Observation, alle
                 if short and OBJECTS4["up"] in state:
                     if extra_move:
                         state.remove(OBJECTS4["up"])
+                        state.add(OBJECTS4["open"])
+                        state.add(OBJECTS4["fridge"])
                     continue
                 state.add(OBJECTS4["open"])
                 state.add(OBJECTS4["fridge"])
+
             elif o == "fridge" and OBJECTS4["open"] in state:
                 if extra_move:
                     state.remove(OBJECTS4["open"])

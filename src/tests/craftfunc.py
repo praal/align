@@ -213,8 +213,7 @@ def train(filename, seed, emp_func):
 
 
 
-#emp_func = sys.argv[1]
-emp_func = "sum"
+emp_func = sys.argv[1]
 start = time()
 train("./test.csv", 2019, emp_func)
 end = time()
